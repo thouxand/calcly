@@ -54,6 +54,8 @@ struct LessonView: View {
     let lesson: Lesson
     /// Set for "Øv dine fejl": these exercises instead of new ones.
     var review: [Exercise]? = nil
+    /// Closes the lesson. The path sets this so closing always gets back to it.
+    var onExit: (() -> Void)? = nil
 
     @State private var queue: [Exercise] = []
     @State private var total = Course.exercisesPerLesson
@@ -66,6 +68,7 @@ struct LessonView: View {
     @State private var startedAt = Date()
     @State private var finished: LessonResult?
     @State private var confirmQuit = false
+    @State private var quitRequested = false
     @State private var outOfHearts = false
     @State private var feedbackTick = 0
 
@@ -76,7 +79,7 @@ struct LessonView: View {
         ZStack {
             AppBackground()
             if let finished {
-                LessonResultView(result: finished, color: color) { dismiss() }
+                LessonResultView(result: finished, color: color) { exit() }
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             } else if let e = current {
                 VStack(spacing: 0) {
@@ -101,10 +104,14 @@ struct LessonView: View {
         .onAppear(perform: start)
         .sensoryFeedback(trigger: feedbackTick) { _, _ in result == true ? .success : .error }
         .confirmationDialog("Vil du stoppe?", isPresented: $confirmQuit, titleVisibility: .visible) {
-            Button("Stop lektionen", role: .destructive) { dismiss() }
+            // Closing straight from the dialog only closes the dialog, so wait until it is gone.
+            Button("Stop lektionen", role: .destructive) { quitRequested = true }
             Button("Fortsæt", role: .cancel) {}
         } message: {
             Text("Du mister det, du har lavet i denne lektion.")
+        }
+        .onChange(of: confirmQuit) { _, shown in
+            if !shown && quitRequested { DispatchQueue.main.async { exit() } }
         }
         .overlay { if outOfHearts { heartsOverlay } }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: queue.first?.id)
@@ -117,7 +124,7 @@ struct LessonView: View {
     private var topBar: some View {
         HStack(spacing: 14) {
             Button {
-                if solved > 0 || mistakes > 0 { confirmQuit = true } else { dismiss() }
+                if solved > 0 || mistakes > 0 { confirmQuit = true } else { exit() }
             } label: {
                 Image(systemName: "xmark")
                     .font(.headline.weight(.bold))
@@ -196,7 +203,7 @@ struct LessonView: View {
                     outOfHearts = false
                 }
                 .buttonStyle(ChunkyButtonStyle(color: .heart))
-                Button("Afslut") { dismiss() }
+                Button("Afslut") { exit() }
                     .font(.headline)
             }
             .padding(26)
@@ -207,6 +214,10 @@ struct LessonView: View {
     }
 
     // MARK: Flow
+
+    private func exit() {
+        if let onExit { onExit() } else { dismiss() }
+    }
 
     private func start() {
         guard queue.isEmpty else { return }

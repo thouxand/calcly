@@ -80,9 +80,10 @@ struct PathView: View {
             .presentationCornerRadius(32)
         }
         .sheet(item: $tips) { lesson in TipsSheet(unit: Course.unit(of: lesson)) }
-        .fullScreenCover(item: $playing) { lesson in LessonView(lesson: lesson) }
+        .fullScreenCover(item: $playing) { lesson in LessonView(lesson: lesson, onExit: { playing = nil }) }
         .fullScreenCover(isPresented: $reviewing) {
-            LessonView(lesson: Course.reviewLesson, review: Array(store.state.mistakes.shuffled().prefix(Course.exercisesPerLesson)))
+            LessonView(lesson: Course.reviewLesson, review: Array(store.state.mistakes.shuffled().prefix(Course.exercisesPerLesson)),
+                       onExit: { reviewing = false })
         }
     }
 
