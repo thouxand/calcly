@@ -125,10 +125,16 @@ struct CardsView: View {
                 Spacer()
                 if flipped {
                     HStack(spacing: 14) {
-                        Button("Kunne ikke") { grade(false) }
-                            .buttonStyle(ChunkyButtonStyle(color: .bad))
-                        Button("Kunne") { grade(true) }
-                            .buttonStyle(ChunkyButtonStyle(color: .good))
+                        Button { grade(false) } label: {
+                            Image(systemName: "xmark").font(.system(size: 26, weight: .black))
+                        }
+                        .buttonStyle(ChunkyButtonStyle(color: .bad))
+                        .accessibilityLabel("Kunne ikke")
+                        Button { grade(true) } label: {
+                            Image(systemName: "checkmark").font(.system(size: 26, weight: .black))
+                        }
+                        .buttonStyle(ChunkyButtonStyle(color: .good))
+                        .accessibilityLabel("Kunne")
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
@@ -163,13 +169,12 @@ struct CardsView: View {
 
     @ViewBuilder private var swipeHint: some View {
         if abs(drag.width) > 30 {
-            Text(drag.width > 0 ? "Kunne" : "Kunne ikke")
-                .font(.system(.headline, design: .rounded).weight(.heavy))
+            Image(systemName: drag.width > 0 ? "checkmark" : "xmark")
+                .font(.system(size: 24, weight: .black))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(drag.width > 0 ? Color.good : Color.bad, in: Capsule())
-                .offset(y: -18)
+                .frame(width: 52, height: 52)
+                .background(drag.width > 0 ? Color.good : Color.bad, in: Circle())
+                .offset(y: -26)
         }
     }
 

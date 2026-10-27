@@ -4,6 +4,7 @@ import Charts
 struct ProfileView: View {
     @EnvironmentObject private var store: ProgressStore
     @State private var confirmReset = false
+    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
 
     var body: some View {
         NavigationStack {
@@ -116,6 +117,13 @@ struct ProfileView: View {
                     ForEach([10, 20, 30, 50, 80], id: \.self) { Text("\($0) XP").tag($0) }
                 }
                 .pickerStyle(.menu)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Udseende")
+                Picker("Udseende", selection: $appearance) {
+                    ForEach(Appearance.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
             }
             Toggle(isOn: $store.state.useHearts) {
                 VStack(alignment: .leading, spacing: 2) {

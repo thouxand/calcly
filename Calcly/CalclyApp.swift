@@ -4,14 +4,36 @@ import SwiftUI
 struct CalclyApp: App {
     @StateObject private var store = ProgressStore()
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .preferredColorScheme(Appearance(rawValue: appearance)?.scheme)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { store.refresh() }
                 }
+        }
+    }
+}
+
+/// "Som telefonen", "Lys" or "Mørk" for the whole app.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .system: return "Auto"
+        case .light: return "Lys"
+        case .dark: return "Mørk"
+        }
+    }
+    var scheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
         }
     }
 }

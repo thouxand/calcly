@@ -23,9 +23,9 @@ Hver lektion har 10 opgaver af typerne vælg-svaret, sandt/falsk, find parrene o
 
 **Lynrunde** – 60 sekunder med hurtige spørgsmål ("quick knowledge"). Point for hvert rigtigt svar og bonus for stimer. Rekorden bliver gemt.
 
-**Kort** – 30 regelkort (afledte, stamfunktioner, produkt-, kvotient- og kædereglen, substitution, delvis integration). Kortene kommer igen efter 1, 2, 4, 8 og 16 dage, når du kan dem, så de sidder fast.
+**Kort** – 30 regelkort (afledte, stamfunktioner, produkt-, kvotient- og kædereglen, substitution, delvis integration). Vend kortet og tryk ✓ eller ✗ (eller swipe). Kortene kommer igen efter 1, 2, 4, 8 og 16 dage, når du kan dem, så de sidder fast.
 
-**Profil** – streak, XP, præcision, kroner, ugegraf og dagligt mål. Hjerter kan slås fra, og alle lektioner kan låses op.
+**Profil** – streak, XP, præcision, kroner, ugegraf og dagligt mål. Lys, mørk eller automatisk udseende. Hjerter kan slås fra, og alle lektioner kan låses op.
 
 ## Filer
 | Fil | Indhold |
