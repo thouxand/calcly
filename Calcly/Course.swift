@@ -18,7 +18,7 @@ struct CourseUnit: Identifiable, Hashable {
     let lessons: [Lesson]
 }
 
-/// A card for "Rygrad-kort": a rule to know by heart.
+/// A card for "Regelkort": a rule to know by heart.
 struct RuleCard: Identifiable, Hashable {
     let id: String
     let front: String
@@ -80,7 +80,7 @@ enum Course {
             Lesson(id: "parts.solve", title: "Delvis integration", skills: [.byParts, .byPartsRule],
                    tip: "∫ x·e^{x} dx: f = x, g′ = e^{x}\n= x·e^{x} − ∫ e^{x} dx = (x − 1)e^{x} + C"),
         ]),
-        CourseUnit(id: "spine", title: "Rygraden", subtitle: "Alt på én gang", colorHex: "#EAB308", symbol: "crown.fill", lessons: [
+        CourseUnit(id: "spine", title: "Mester", subtitle: "Alt på én gang", colorHex: "#EAB308", symbol: "crown.fill", lessons: [
             Lesson(id: "spine.diff", title: "Al differentiation", skills: [.powerSums, .basicDerivatives, .productRule, .quotientRule, .chainLinear, .chainInner],
                    tip: "Potens, standard, produkt, kvotient og kæde.", level: 3),
             Lesson(id: "spine.int", title: "Al integration", skills: [.integralPowers, .basicIntegrals, .integralLinear, .substitution, .byParts],

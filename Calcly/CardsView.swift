@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "Rygrad-kort": the rules as flash cards, repeated less often the better you know them.
+/// "Regelkort": the rules as flash cards, repeated less often the better you know them.
 struct CardsView: View {
     @EnvironmentObject private var store: ProgressStore
     @State private var session: [RuleCard] = []
@@ -17,7 +17,7 @@ struct CardsView: View {
                 AppBackground()
                 if inSession { sessionView } else { overview }
             }
-            .navigationTitle(inSession ? "" : "Rygrad-kort")
+            .navigationTitle(inSession ? "" : "Regelkort")
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: inSession)
         }
     }

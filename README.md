@@ -1,11 +1,11 @@
-# Rygrad – calculus på rygraden
+# Calcly – calculus på rygraden
 
 En iPhone-app, hvor du øver differentiation og integration i Duolingo-stil, til reglerne sidder på rygraden. Bygget i SwiftUI med Liquid Glass fra iOS 26.
 
 ## Kør appen
-1. Åbn `Rygrad.xcodeproj` i **Xcode 26** (Xcode 16 virker også; så bliver glasset til frostet glas).
-2. Vælg projektet **Rygrad** → target **Rygrad** → **Signing & Capabilities** → vælg dit Apple-ID som **Team**.
-   Får du en fejl om bundle-id, så skift `dk.rygrad.app` til noget unikt, fx `dk.ditnavn.rygrad`.
+1. Åbn `Calcly.xcodeproj` i **Xcode 26** (Xcode 16 virker også; så bliver glasset til frostet glas).
+2. Vælg projektet **Calcly** → target **Calcly** → **Signing & Capabilities** → vælg dit Apple-ID som **Team**.
+   Får du en fejl om bundle-id, så skift `dk.calcly.app` til noget unikt, fx `dk.ditnavn.calcly`.
 3. Vælg din iPhone (med kabel) eller en simulator, og tryk **⌘R**.
 
 Kræver iOS 18 eller nyere. På iOS 26 får du ægte Liquid Glass.
@@ -17,7 +17,7 @@ Kræver iOS 18 eller nyere. På iOS 26 får du ægte Liquid Glass.
 - Kædereglen: indre og ydre funktion, kx indeni, polynomier indeni
 - Integration: potenser, standardintegraler, kx indeni
 - Substitution og delvis integration
-- Rygraden: alt blandet og Mesterprøven
+- Mester: alt blandet og Mesterprøven
 
 Hver lektion har 10 opgaver af typerne vælg-svaret, sandt/falsk, find parrene og byg svaret med brikker. Opgaverne bliver lavet på stedet, så de er nye hver gang. Svarer du forkert, kommer opgaven igen sidst i lektionen, og du får reglen forklaret. Hver lektion kan tages op til 5 gange for at få 5 kroner.
 
@@ -30,7 +30,7 @@ Hver lektion har 10 opgaver af typerne vælg-svaret, sandt/falsk, find parrene o
 ## Filer
 | Fil | Indhold |
 |---|---|
-| `RygradApp.swift` | App-start, faner og lagring af fremskridt |
+| `CalclyApp.swift` | App-start, faner og lagring af fremskridt |
 | `Course.swift` | Enheder, lektioner, tips og regelkort |
 | `Exercises.swift` | Opgavegeneratorer for hver regel |
 | `MathFormat.swift`, `MathMarkup.swift`, `MathText.swift` | Brøker og potenser: formatering og visning |

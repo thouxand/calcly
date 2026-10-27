@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct RygradApp: App {
+struct CalclyApp: App {
     @StateObject private var store = ProgressStore()
     @Environment(\.scenePhase) private var scenePhase
 
