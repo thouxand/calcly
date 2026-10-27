@@ -8,7 +8,6 @@ enum Skill: String, Codable, CaseIterable {
     case integralPowers, basicIntegrals, integralLinear
     case substitutionIdentify, substitution
     case byPartsRule, byParts
-    case chainSteps, substitutionSteps, productSteps
     case limitsBasic, limitsAlgebra
     case definiteIntegrals
     case partialDerivatives
@@ -16,7 +15,7 @@ enum Skill: String, Codable, CaseIterable {
     var isIntegration: Bool {
         switch self {
         case .integralPowers, .basicIntegrals, .integralLinear, .substitutionIdentify, .substitution, .byPartsRule, .byParts,
-             .substitutionSteps, .definiteIntegrals: return true
+             .definiteIntegrals: return true
         default: return false
         }
     }
@@ -88,27 +87,28 @@ enum Generator {
         case .powerRule: return powerRule(level: level, sums: false)
         case .powerSums: return powerRule(level: max(2, level), sums: true)
         case .basicDerivatives: return basicDerivative()
-        case .productRule: return productRule()
+        // Step-by-step is one of the exercise types, mixed in like the others.
+        case .productRule: return stepTurn() ? productSteps() : productRule()
         case .quotientRule: return quotientRule()
         case .chainIdentify: return chainIdentify()
-        case .chainLinear: return chainRule(inner: linearInners())
-        case .chainInner: return chainRule(inner: polynomialInners())
+        case .chainLinear: return stepTurn() ? chainSteps(inner: linearInners()) : chainRule(inner: linearInners())
+        case .chainInner: return stepTurn() ? chainSteps(inner: polynomialInners()) : chainRule(inner: polynomialInners())
         case .integralPowers: return integralPower(level: level)
         case .basicIntegrals: return basicIntegral()
         case .integralLinear: return integralLinear()
         case .substitutionIdentify: return substitutionIdentify()
-        case .substitution: return substitution()
+        case .substitution: return stepTurn() ? substitutionSteps() : substitution()
         case .byPartsRule: return byPartsRule()
         case .byParts: return byParts()
-        case .chainSteps: return chainSteps()
-        case .productSteps: return productSteps()
-        case .substitutionSteps: return substitutionSteps()
         case .limitsBasic: return limitsBasic()
         case .limitsAlgebra: return limitsAlgebra()
         case .definiteIntegrals: return definiteIntegral()
         case .partialDerivatives: return partialDerivative()
         }
     }
+
+    /// About one exercise in five is done step by step.
+    private static func stepTurn() -> Bool { Int.random(in: 0..<5) == 0 }
 
     /// A quick true/false or three-option question, for the timed round.
     static func quick(_ skill: Skill) -> Exercise {
@@ -341,7 +341,7 @@ enum Generator {
         ]
         return Exercise(prompt: "Trin for trin", question: diff(f), kind: .steps(steps),
                         explanation: "Produktreglen: (f·g)′ = f′·g + f·g′\nf = \(p.f), f′ = \(fPrime)\ng = \(t.f), g′ = \(gPrime)\nf′(x) = \(d)",
-                        skill: .productSteps)
+                        skill: .productRule)
     }
 
     private static let quotients: [(String, String, [String])] = [
@@ -492,8 +492,7 @@ enum Generator {
     }
 
     /// Kædereglen i tre trin: indre funktion, dens afledte, og så svaret.
-    private static func chainSteps() -> Exercise {
-        let inner = Bool.random() ? linearInners() : polynomialInners()
+    private static func chainSteps(inner: Inner) -> Exercise {
         let p = chainParts(inner)
         func step(_ prompt: String, _ correct: String, _ wrong: [String]) -> Exercise.Step {
             var options = [correct]
@@ -506,7 +505,7 @@ enum Generator {
             step("Trin 2: Hvad er u′?", p.du, [inner.u, "x", M.term(inner.coef + Q(1), inner.body), M.number(inner.coef)]),
             step("Trin 3: Hvad er f′(x)?", p.d, p.wrong),
         ]
-        return Exercise(prompt: "Trin for trin", question: diff(p.f), kind: .steps(steps), explanation: p.explanation, skill: .chainSteps)
+        return Exercise(prompt: "Trin for trin", question: diff(p.f), kind: .steps(steps), explanation: p.explanation, skill: inner.body.isEmpty ? .chainLinear : .chainInner)
     }
 
     private static func chainIdentify() -> Exercise {
@@ -675,7 +674,7 @@ enum Generator {
             step("Trin 3: Hvad er stamfunktionen?", p.answer, p.wrong),
         ]
         return Exercise(prompt: "Trin for trin", question: integral(p.integrand), kind: .steps(steps),
-                        explanation: p.explanation, skill: .substitutionSteps)
+                        explanation: p.explanation, skill: .substitution)
     }
 
     private static func substitutionIdentify() -> Exercise {

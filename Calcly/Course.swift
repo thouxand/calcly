@@ -43,8 +43,6 @@ enum Course {
         CourseUnit(id: "prod", title: "Produkt og kvotient", subtitle: "Når funktioner ganges og deles", colorHex: "#8B5CF6", symbol: "multiply", lessons: [
             Lesson(id: "prod.product", title: "Produktreglen", skills: [.productRule],
                    tip: "(f·g)′ = f′·g + f·g′\nDifferentiér den ene ad gangen, og læg sammen."),
-            Lesson(id: "prod.steps", title: "Trin for trin", skills: [.productSteps],
-                   tip: "1. Find f′.\n2. Find g′.\n3. Sæt sammen: f′·g + f·g′"),
             Lesson(id: "prod.quotient", title: "Kvotientreglen", skills: [.quotientRule],
                    tip: "(\\frac{f}{g})′ = \\frac{f′·g − f·g′}{g^{2}}\nHusk: minus, og f′ kommer først."),
             Lesson(id: "prod.mix", title: "Blandet", skills: [.productRule, .quotientRule, .basicDerivatives],
@@ -53,8 +51,6 @@ enum Course {
         CourseUnit(id: "chain", title: "Kædereglen", subtitle: "En funktion inden i en anden", colorHex: "#F97316", symbol: "link", lessons: [
             Lesson(id: "chain.identify", title: "Indre og ydre", skills: [.chainIdentify],
                    tip: "I f(g(x)) er g den indre funktion og f den ydre.\nEks.: sin(x^{2}) har indre x^{2} og ydre sin."),
-            Lesson(id: "chain.steps", title: "Trin for trin", skills: [.chainSteps],
-                   tip: "1. Find den indre funktion u.\n2. Differentiér den: u′.\n3. Ydre afledt (med u indeni) gange u′."),
             Lesson(id: "chain.linear", title: "Kædereglen I", skills: [.chainLinear],
                    tip: "(f(g(x)))′ = f′(g(x))·g′(x)\nMed kx indeni: gang med k.\n(sin(3x))′ = 3cos(3x)"),
             Lesson(id: "chain.inner", title: "Kædereglen II", skills: [.chainInner],
@@ -75,8 +71,6 @@ enum Course {
         CourseUnit(id: "sub", title: "Substitution", subtitle: "Kædereglen baglæns", colorHex: "#EC4899", symbol: "arrow.triangle.2.circlepath", lessons: [
             Lesson(id: "sub.identify", title: "Find u", skills: [.substitutionIdentify],
                    tip: "Vælg u som den indre funktion, hvis afledte også står i integralet.\n∫ 2x·cos(x^{2}) dx: u = x^{2}, du = 2x dx"),
-            Lesson(id: "sub.steps", title: "Trin for trin", skills: [.substitutionSteps],
-                   tip: "1. Vælg u (den indre funktion).\n2. Find du = u′ dx.\n3. Integrér i u, og sæt u tilbage."),
             Lesson(id: "sub.solve", title: "Substitution", skills: [.substitution],
                    tip: "∫ f(g(x))·g′(x) dx = F(g(x)) + C\nMangler der en faktor, så divider med den."),
         ]),
