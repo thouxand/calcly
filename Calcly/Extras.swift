@@ -85,16 +85,16 @@ struct Mascot: View {
         ZStack {
             // Body: a soft green blob with a glass shine.
             RoundedRectangle(cornerRadius: size * 0.42, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: "#4ADE80"), Color(hex: "#16A34A")], startPoint: .top, endPoint: .bottom))
+                .fill(LinearGradient(colors: [Color(hex: "#7DD3FC"), Color(hex: "#0284C7")], startPoint: .top, endPoint: .bottom))
                 .frame(width: size, height: size * 0.92)
                 .overlay(alignment: .top) {
                     Capsule().fill(.white.opacity(0.35)).frame(width: size * 0.5, height: size * 0.12).padding(.top, size * 0.08)
                 }
-                .shadow(color: Color(hex: "#16A34A").opacity(0.4), radius: size * 0.12, y: size * 0.08)
+                .shadow(color: Color(hex: "#0284C7").opacity(0.4), radius: size * 0.12, y: size * 0.08)
             // The ∫ antenna.
             Text("∫")
                 .font(.system(size: size * 0.42, weight: .black, design: .serif))
-                .foregroundStyle(Color(hex: "#15803D"))
+                .foregroundStyle(Color(hex: "#0369A1"))
                 .offset(x: size * 0.2, y: -size * 0.58)
                 .rotationEffect(.degrees(mood == .cheer ? -12 : 8))
             face
@@ -121,7 +121,7 @@ struct Mascot: View {
         VStack(spacing: size * 0.08) {
             HStack(spacing: size * 0.2) { eye; eye }
             mouth
-                .stroke(Color(hex: "#14532D"), style: StrokeStyle(lineWidth: size * 0.05, lineCap: .round))
+                .stroke(Color(hex: "#0C4A6E"), style: StrokeStyle(lineWidth: size * 0.05, lineCap: .round))
                 .frame(width: size * 0.3, height: size * 0.12)
         }
         .offset(y: size * 0.04)
@@ -131,7 +131,7 @@ struct Mascot: View {
         ZStack {
             Ellipse().fill(.white).frame(width: size * 0.2, height: blink ? size * 0.03 : size * 0.24)
             if !blink {
-                Circle().fill(Color(hex: "#14532D")).frame(width: size * 0.1)
+                Circle().fill(Color(hex: "#0C4A6E")).frame(width: size * 0.1)
                     .offset(x: mood == .thinking ? size * 0.04 : 0, y: mood == .sad ? size * 0.04 : (mood == .thinking ? -size * 0.04 : 0))
             }
         }

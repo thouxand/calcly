@@ -30,7 +30,7 @@ enum Course {
     static let exercisesPerLesson = 10
 
     static let units: [CourseUnit] = [
-        CourseUnit(id: "diff", title: "Differentiation", subtitle: "Grundreglerne", colorHex: "#3B82F6", symbol: "function", lessons: [
+        CourseUnit(id: "diff", title: "Differentiation", subtitle: "Grundreglerne", colorHex: "#0EA5E9", symbol: "function", lessons: [
             Lesson(id: "diff.power", title: "Potensreglen", skills: [.powerRule],
                    tip: "(x^{n})′ = n·x^{n−1}\nKonstanten foran bliver stående:\n(a·x^{n})′ = a·n·x^{n−1}"),
             Lesson(id: "diff.basic", title: "Standardfunktioner", skills: [.basicDerivatives],
@@ -40,7 +40,7 @@ enum Course {
             Lesson(id: "diff.mix", title: "Blandet", skills: [.powerRule, .powerSums, .basicDerivatives],
                    tip: "Alle grundregler blandet.", level: 2),
         ]),
-        CourseUnit(id: "prod", title: "Produkt og kvotient", subtitle: "Når funktioner ganges og deles", colorHex: "#8B5CF6", symbol: "multiply", lessons: [
+        CourseUnit(id: "prod", title: "Produkt og kvotient", subtitle: "Når funktioner ganges og deles", colorHex: "#3B82F6", symbol: "multiply", lessons: [
             Lesson(id: "prod.product", title: "Produktreglen", skills: [.productRule],
                    tip: "(f·g)′ = f′·g + f·g′\nDifferentiér den ene ad gangen, og læg sammen."),
             Lesson(id: "prod.quotient", title: "Kvotientreglen", skills: [.quotientRule],
@@ -48,7 +48,7 @@ enum Course {
             Lesson(id: "prod.mix", title: "Blandet", skills: [.productRule, .quotientRule, .basicDerivatives],
                    tip: "Produkt, kvotient og standardfunktioner.", level: 2),
         ]),
-        CourseUnit(id: "chain", title: "Kædereglen", subtitle: "En funktion inden i en anden", colorHex: "#F97316", symbol: "link", lessons: [
+        CourseUnit(id: "chain", title: "Kædereglen", subtitle: "En funktion inden i en anden", colorHex: "#0284C7", symbol: "link", lessons: [
             Lesson(id: "chain.identify", title: "Indre og ydre", skills: [.chainIdentify],
                    tip: "I f(g(x)) er g den indre funktion og f den ydre.\nEks.: sin(x^{2}) har indre x^{2} og ydre sin."),
             Lesson(id: "chain.linear", title: "Kædereglen I", skills: [.chainLinear],
@@ -58,7 +58,7 @@ enum Course {
             Lesson(id: "chain.mix", title: "Al differentiation", skills: [.chainLinear, .chainInner, .productRule, .quotientRule, .powerSums],
                    tip: "Find først ud af, hvilken regel der skal bruges.", level: 2),
         ]),
-        CourseUnit(id: "int", title: "Integration", subtitle: "Stamfunktioner", colorHex: "#22C55E", symbol: "sum", lessons: [
+        CourseUnit(id: "int", title: "Integration", subtitle: "Stamfunktioner", colorHex: "#06B6D4", symbol: "sum", lessons: [
             Lesson(id: "int.power", title: "Potenser", skills: [.integralPowers],
                    tip: "∫ x^{n} dx = \\frac{1}{n + 1}x^{n+1} + C  (n ≠ −1)\nLæg 1 til eksponenten, og divider med den nye."),
             Lesson(id: "int.basic", title: "Standardintegraler", skills: [.basicIntegrals],
@@ -68,33 +68,33 @@ enum Course {
             Lesson(id: "int.mix", title: "Blandet", skills: [.integralPowers, .basicIntegrals, .integralLinear],
                    tip: "Alle grundintegraler blandet.", level: 2),
         ]),
-        CourseUnit(id: "sub", title: "Substitution", subtitle: "Kædereglen baglæns", colorHex: "#EC4899", symbol: "arrow.triangle.2.circlepath", lessons: [
+        CourseUnit(id: "sub", title: "Substitution", subtitle: "Kædereglen baglæns", colorHex: "#2563EB", symbol: "arrow.triangle.2.circlepath", lessons: [
             Lesson(id: "sub.identify", title: "Find u", skills: [.substitutionIdentify],
                    tip: "Vælg u som den indre funktion, hvis afledte også står i integralet.\n∫ 2x·cos(x^{2}) dx: u = x^{2}, du = 2x dx"),
             Lesson(id: "sub.solve", title: "Substitution", skills: [.substitution],
                    tip: "∫ f(g(x))·g′(x) dx = F(g(x)) + C\nMangler der en faktor, så divider med den."),
         ]),
-        CourseUnit(id: "parts", title: "Delvis integration", subtitle: "Produkter, der skal integreres", colorHex: "#14B8A6", symbol: "square.split.2x1", lessons: [
+        CourseUnit(id: "parts", title: "Delvis integration", subtitle: "Produkter, der skal integreres", colorHex: "#0891B2", symbol: "square.split.2x1", lessons: [
             Lesson(id: "parts.rule", title: "Formlen", skills: [.byPartsRule],
                    tip: "∫ f·g′ dx = f·g − ∫ f′·g dx\nVælg f, så den bliver enklere ved differentiation (ln, x^{n})."),
             Lesson(id: "parts.solve", title: "Delvis integration", skills: [.byParts, .byPartsRule],
                    tip: "∫ x·e^{x} dx: f = x, g′ = e^{x}\n= x·e^{x} − ∫ e^{x} dx = (x − 1)e^{x} + C"),
         ]),
-        CourseUnit(id: "lim", title: "Grænseværdier", subtitle: "Hvad nærmer funktionen sig?", colorHex: "#06B6D4", symbol: "arrow.right.to.line", lessons: [
+        CourseUnit(id: "lim", title: "Grænseværdier", subtitle: "Hvad nærmer funktionen sig?", colorHex: "#38BDF8", symbol: "arrow.right.to.line", lessons: [
             Lesson(id: "lim.basic", title: "Indsæt og klassikere", skills: [.limitsBasic],
                    tip: "Er funktionen kontinuert, så sæt bare tallet ind.\nlim_{x → 0} \\frac{sin(x)}{x} = 1\nlim_{x → ∞} (1 + \\frac{1}{x})^{x} = e"),
             Lesson(id: "lim.algebra", title: "0/0 og uendelig", skills: [.limitsAlgebra],
                    tip: "Giver indsæt \\frac{0}{0}: faktorisér og forkort.\nMod ∞: kig kun på de højeste potenser i tæller og nævner."),
         ]),
-        CourseUnit(id: "def", title: "Bestemte integraler", subtitle: "Areal under grafen", colorHex: "#84CC16", symbol: "chart.bar.fill", lessons: [
+        CourseUnit(id: "def", title: "Bestemte integraler", subtitle: "Areal under grafen", colorHex: "#1D4ED8", symbol: "chart.bar.fill", lessons: [
             Lesson(id: "def.basic", title: "Fra a til b", skills: [.definiteIntegrals],
                    tip: "∫_{a}^{b} f(x) dx = F(b) − F(a)\nFind stamfunktionen, sæt b ind, og træk F(a) fra."),
         ]),
-        CourseUnit(id: "partial", title: "Partielle afledte", subtitle: "Funktioner af to variable", colorHex: "#A855F7", symbol: "cube.fill", lessons: [
+        CourseUnit(id: "partial", title: "Partielle afledte", subtitle: "Funktioner af to variable", colorHex: "#0369A1", symbol: "cube.fill", lessons: [
             Lesson(id: "partial.basic", title: "∂f/∂x og ∂f/∂y", skills: [.partialDerivatives],
                    tip: "Differentiér efter én variabel, og behandl den anden som en konstant.\nf = x^{2}y ⇒ ∂f/∂x = 2xy, ∂f/∂y = x^{2}"),
         ]),
-        CourseUnit(id: "spine", title: "Mester", subtitle: "Alt på én gang", colorHex: "#EAB308", symbol: "crown.fill", lessons: [
+        CourseUnit(id: "spine", title: "Mester", subtitle: "Alt på én gang", colorHex: "#1E40AF", symbol: "crown.fill", lessons: [
             Lesson(id: "spine.diff", title: "Al differentiation", skills: [.powerSums, .basicDerivatives, .productRule, .quotientRule, .chainLinear, .chainInner],
                    tip: "Potens, standard, produkt, kvotient og kæde.", level: 3),
             Lesson(id: "spine.int", title: "Al integration", skills: [.integralPowers, .basicIntegrals, .integralLinear, .substitution, .byParts],

@@ -77,7 +77,7 @@ extension View {
 
 /// The chunky, pressable Duolingo button: a coloured top that sinks into its darker base.
 struct ChunkyButtonStyle: ButtonStyle {
-    var color: Color = .good
+    var color: Color = .accentColor
     var foreground: Color = .white
     var depth: CGFloat = 5
     var radius: CGFloat = 18
@@ -175,15 +175,15 @@ struct AppBackground: View {
     }
 
     private var lightColors: [Color] {
-        [Color(hex: "#E0F2FE"), Color(hex: "#DCFCE7"), Color(hex: "#F3E8FF"),
-         Color(hex: "#FEF9C3"), .white, Color(hex: "#E0E7FF"),
-         Color(hex: "#FCE7F3"), Color(hex: "#DBEAFE"), Color(hex: "#D1FAE5")]
+        [Color(hex: "#E0F2FE"), .white, Color(hex: "#DBEAFE"),
+         .white, Color(hex: "#F0F9FF"), Color(hex: "#E0F2FE"),
+         Color(hex: "#BAE6FD"), .white, Color(hex: "#E0F2FE")]
     }
 
     private var darkColors: [Color] {
-        [Color(hex: "#0B1120"), Color(hex: "#0F2A1F"), Color(hex: "#1E1B4B"),
-         Color(hex: "#111827"), Color(hex: "#0B1324"), Color(hex: "#172554"),
-         Color(hex: "#1F1035"), Color(hex: "#0C1A2E"), Color(hex: "#052E1C")]
+        [Color(hex: "#0B1220"), Color(hex: "#0C2340"), Color(hex: "#081426"),
+         Color(hex: "#0A1628"), Color(hex: "#05080F"), Color(hex: "#0B2545"),
+         Color(hex: "#0C1E36"), Color(hex: "#070D18"), Color(hex: "#0E3A5C")]
     }
 }
 

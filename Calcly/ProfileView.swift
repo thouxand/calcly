@@ -139,7 +139,7 @@ struct ProfileView: View {
             Chart {
                 ForEach(Array(days.enumerated()), id: \.offset) { i, d in
                     BarMark(x: .value("Dag", weekday(i, of: days.count)), y: .value("XP", d.xp))
-                        .foregroundStyle(d.xp >= goal ? Color.good.gradient : Color.accentColor.gradient)
+                        .foregroundStyle(d.xp >= goal ? Color.accentColor.gradient : Color.accentColor.opacity(0.45).gradient)
                         .cornerRadius(6)
                 }
                 RuleMark(y: .value("Mål", goal))
@@ -217,7 +217,7 @@ struct ProfileView: View {
             Divider()
             Button("Nulstil fremskridt", role: .destructive) { confirmReset = true }
         }
-        .tint(.good)
+        .tint(.accentColor)
         .padding(20)
         .glassCard()
     }

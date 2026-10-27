@@ -69,7 +69,7 @@ struct LessonView: View {
     @State private var outOfHearts = false
     @State private var feedbackTick = 0
 
-    private var color: Color { Color(hex: Course.unit(of: lesson)?.colorHex ?? "#22C55E") }
+    private var color: Color { Color(hex: Course.unit(of: lesson)?.colorHex ?? "#0EA5E9") }
     private var current: Exercise? { queue.first }
 
     var body: some View {

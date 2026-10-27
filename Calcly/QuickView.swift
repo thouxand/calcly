@@ -61,7 +61,7 @@ struct QuickView: View {
                     .font(.system(size: 30, weight: .black))
                     .foregroundStyle(.white)
                     .frame(width: 54, height: 54)
-                    .background(Color.gold.gradient, in: Circle())
+                    .background(Color.accentColor.gradient, in: Circle())
                     .offset(x: 10, y: -4)
             }
             VStack(spacing: 8) {
@@ -79,7 +79,7 @@ struct QuickView: View {
                 .foregroundStyle(Color.gold)
             Spacer()
             Button("Start", action: startRound)
-                .buttonStyle(ChunkyButtonStyle(color: .gold))
+                .buttonStyle(ChunkyButtonStyle(color: .accentColor))
         }
         .padding(24)
     }
@@ -138,7 +138,7 @@ struct QuickView: View {
             Circle().stroke(Color.primary.opacity(0.12), lineWidth: 6)
             Circle()
                 .trim(from: 0, to: left / Self.duration)
-                .stroke(left < 10 ? Color.bad : Color.gold, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(left < 10 ? Color.bad : Color.accentColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int(ceil(left)))")
                 .font(.system(.headline, design: .rounded).weight(.heavy))
@@ -191,7 +191,7 @@ struct QuickView: View {
                 .glassCapsule(tint: Color.gold.opacity(0.2))
             Spacer()
             Button("Igen", action: startRound)
-                .buttonStyle(ChunkyButtonStyle(color: .gold))
+                .buttonStyle(ChunkyButtonStyle(color: .accentColor))
             Button("Færdig") { phase = .ready }
                 .font(.headline)
         }

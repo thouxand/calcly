@@ -148,10 +148,10 @@ struct GoalRing: View {
             Circle().stroke(Color.primary.opacity(0.12), lineWidth: 5)
             Circle()
                 .trim(from: 0, to: min(1, progress))
-                .stroke(Color.good, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             if progress >= 1 {
-                Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(Color.good)
+                Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(Color.accentColor)
             }
         }
         .animation(.smooth, value: progress)
@@ -259,7 +259,7 @@ private struct LessonSheet: View {
 
     var body: some View {
         let unit = Course.unit(of: lesson)
-        let color = Color(hex: unit?.colorHex ?? "#22C55E")
+        let color = Color(hex: unit?.colorHex ?? "#0EA5E9")
         let unlocked = store.state.isUnlocked(lesson)
         let crowns = store.state.crowns(lesson)
         VStack(spacing: 16) {
@@ -311,7 +311,7 @@ struct TipsSheet: View {
                         VStack(spacing: 12) {
                             Text(lesson.title)
                                 .font(.system(.headline, design: .rounded).weight(.heavy))
-                                .foregroundStyle(Color(hex: unit?.colorHex ?? "#22C55E"))
+                                .foregroundStyle(Color(hex: unit?.colorHex ?? "#0EA5E9"))
                             MathText(markup: lesson.tip, size: 20, weight: .medium)
                         }
                         .frame(maxWidth: .infinity)

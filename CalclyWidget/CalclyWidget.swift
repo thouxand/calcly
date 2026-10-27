@@ -100,7 +100,7 @@ struct CalclyWidget: Widget {
         StaticConfiguration(kind: "CalclyRuleWidget", provider: RuleProvider()) { entry in
             CalclyWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    LinearGradient(colors: [Color(red: 0.13, green: 0.77, blue: 0.37), Color(red: 0.05, green: 0.58, blue: 0.53)],
+                    LinearGradient(colors: [Color(red: 0.22, green: 0.74, blue: 0.97), Color(red: 0.01, green: 0.41, blue: 0.63)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
                 }
         }

@@ -164,7 +164,7 @@ struct CardsView: View {
                     .glassCapsule(tint: Color.gold.opacity(0.2))
                 Spacer()
                 Button("Færdig") { inSession = false }
-                    .buttonStyle(ChunkyButtonStyle(color: .good))
+                    .buttonStyle(ChunkyButtonStyle(color: .accentColor))
             }
             .padding(24)
             .overlay { ConfettiView(colors: [.good, .gold, .blue, .flame]).allowsHitTesting(false) }
