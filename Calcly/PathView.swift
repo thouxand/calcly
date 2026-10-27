@@ -6,12 +6,35 @@ struct PathView: View {
     @State private var selected: Lesson?
     @State private var playing: Lesson?
     @State private var tips: Lesson?
+    @State private var reviewing = false
 
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0) {
+                        if !store.state.mistakes.isEmpty {
+                            Button { reviewing = true } label: {
+                                HStack(spacing: 12) {
+                                    Mascot(mood: .thinking, size: 40).frame(width: 50, height: 52)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Øv dine fejl")
+                                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                                        Text("\(store.state.mistakes.count) \(store.state.mistakes.count == 1 ? "opgave" : "opgaver") venter")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.headline).foregroundStyle(.secondary)
+                                }
+                                .padding(14)
+                                .glassCard(22, tint: Color.heart.opacity(0.1), interactive: true)
+                            }
+                            .buttonStyle(PressStyle())
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 18)
+                            .padding(.top, 14)
+                        }
                         ForEach(Course.units) { unit in
                             UnitBanner(unit: unit) { tips = unit.lessons.first }
                                 .padding(.horizontal, 18)
@@ -58,6 +81,9 @@ struct PathView: View {
         }
         .sheet(item: $tips) { lesson in TipsSheet(unit: Course.unit(of: lesson)) }
         .fullScreenCover(item: $playing) { lesson in LessonView(lesson: lesson) }
+        .fullScreenCover(isPresented: $reviewing) {
+            LessonView(lesson: Course.reviewLesson, review: Array(store.state.mistakes.shuffled().prefix(Course.exercisesPerLesson)))
+        }
     }
 
     private func globalIndex(_ lesson: Lesson) -> Int { Course.lessons.firstIndex(of: lesson) ?? 0 }

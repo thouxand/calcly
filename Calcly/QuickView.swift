@@ -8,10 +8,10 @@ struct QuickView: View {
         case all = "Alt", diff = "Differentiation", integral = "Integration"
         var id: String { rawValue }
         var skills: [Skill] {
-            let all = Skill.allCases.filter { $0 != .chainIdentify && $0 != .substitutionIdentify }
+            let all = Skill.allCases.filter { ![.chainIdentify, .substitutionIdentify, .chainSteps, .substitutionSteps].contains($0) }
             switch self {
             case .all: return all
-            case .diff: return all.filter { !$0.isIntegration }
+            case .diff: return all.filter { !$0.isIntegration && $0 != .limitsBasic && $0 != .limitsAlgebra }
             case .integral: return all.filter(\.isIntegration)
             }
         }
@@ -55,9 +55,14 @@ struct QuickView: View {
     private var ready: some View {
         VStack(spacing: 24) {
             Spacer()
-            ZStack {
-                Circle().fill(Color.gold.gradient).frame(width: 130, height: 130).glassCircle(tint: Color.gold.opacity(0.3))
-                Image(systemName: "bolt.fill").font(.system(size: 60, weight: .black)).foregroundStyle(.white)
+            ZStack(alignment: .topTrailing) {
+                Mascot(mood: .happy, size: 110)
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: 54, height: 54)
+                    .background(Color.gold.gradient, in: Circle())
+                    .offset(x: 10, y: -4)
             }
             VStack(spacing: 8) {
                 Text("60 sekunder").font(.system(.largeTitle, design: .rounded).weight(.heavy))
@@ -219,6 +224,7 @@ struct QuickView: View {
         picked = i
         lastRight = correct
         tick += 1
+        Sound.play(correct ? .correct : .wrong, enabled: store.state.sound)
         if correct {
             combo += 1
             bestCombo = max(bestCombo, combo)
@@ -240,5 +246,8 @@ struct QuickView: View {
         newBest = score > store.state.bestQuick
         if newBest { store.state.bestQuick = score }
         store.state.addXP(score)
+        _ = store.state.collectBadges()
+        Sound.play(.complete, enabled: store.state.sound)
+        Reminder.reschedule(store.state)
     }
 }

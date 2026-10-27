@@ -53,7 +53,7 @@ enum M {
 
     /// Coefficient times a body: 3x^{2}, −sin(x), \frac{1}{2}e^{2x}, 5.
     static func term(_ c: Q, _ body: String) -> String {
-        if body.isEmpty { return number(c) }
+        if body.isEmpty || c.isZero { return number(c) }
         if c.isOne { return body }
         if c.isMinusOne { return minus + body }
         return number(c) + body

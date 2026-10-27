@@ -1,9 +1,10 @@
 import Foundation
 
-/// Parsed maths markup: text, superscripts (^{…}) and fractions (\frac{…}{…}).
+/// Parsed maths markup: text, superscripts (^{…}), subscripts (_{…}) and fractions (\frac{…}{…}).
 indirect enum MathToken: Equatable {
     case text(String)
     case sup([MathToken])
+    case sub([MathToken])
     case frac([MathToken], [MathToken])
 
     static func parse(_ s: String) -> [MathToken] {
@@ -35,6 +36,12 @@ indirect enum MathToken: Equatable {
                 i += 1
                 if let g = group() { flush(); out.append(.sup(parse(g))); continue }
                 text.append("^")
+                continue
+            }
+            if chars[i] == "_", i + 1 < chars.count, chars[i + 1] == "{" {
+                i += 1
+                if let g = group() { flush(); out.append(.sub(parse(g))); continue }
+                text.append("_")
                 continue
             }
             if chars[i] == "\\", i + 5 < chars.count, String(chars[i...(i + 5)]) == "\\frac{" {

@@ -88,6 +88,8 @@ private struct MathLine: View {
                 out += a
             case .sup(let inner):
                 out += attributed(inner, size: size * 0.64, weight: weight, baseline: baseline + size * 0.42)
+            case .sub(let inner):
+                out += attributed(inner, size: size * 0.6, weight: weight, baseline: baseline - size * 0.22)
             case .frac(let a, let b):
                 func plain(_ text: String) -> AttributedString {
                     var p = AttributedString(text)

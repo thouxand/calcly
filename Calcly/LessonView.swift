@@ -5,12 +5,16 @@ struct AnswerDraft: Equatable {
     var choice: Int?
     var truth: Bool?
     var tiles: [Int] = []
+    var typed: [String] = []
+    /// Current step in a step-by-step exercise.
+    var step = 0
 
     func isReady(for kind: Exercise.Kind) -> Bool {
         switch kind {
-        case .choice: return choice != nil
+        case .choice, .steps: return choice != nil
         case .trueFalse: return truth != nil
         case .build: return !tiles.isEmpty
+        case .typed: return !typed.isEmpty
         case .match: return false
         }
     }
@@ -20,6 +24,9 @@ struct AnswerDraft: Equatable {
         case .choice(_, let correct): return choice == correct
         case .trueFalse(let t): return truth == t
         case .build(let tiles, let answers): return answers.contains(self.tiles.map { tiles[$0] })
+        case .typed(let answer, let upToConstant):
+            return Evaluator.equivalent(Evaluator.plain(keys: typed), answer, upToConstant: upToConstant)
+        case .steps(let steps): return step < steps.count && choice == steps[step].correct
         case .match: return true
         }
     }
@@ -27,11 +34,15 @@ struct AnswerDraft: Equatable {
 
 extension Exercise {
     /// The right answer as markup, for the feedback panel.
-    var rightAnswer: String {
+    func rightAnswer(_ draft: AnswerDraft) -> String {
         switch kind {
         case .choice(let o, let c): return o[c]
         case .trueFalse(let t): return t ? "Sandt" : "Falsk"
         case .build(_, let answers): return answers[0].joined(separator: " ")
+        case .typed(let answer, _): return answer
+        case .steps(let steps):
+            let s = steps[min(draft.step, steps.count - 1)]
+            return s.options[s.correct]
         case .match: return ""
         }
     }
@@ -41,6 +52,8 @@ struct LessonView: View {
     @EnvironmentObject private var store: ProgressStore
     @Environment(\.dismiss) private var dismiss
     let lesson: Lesson
+    /// Set for "Øv dine fejl": these exercises instead of new ones.
+    var review: [Exercise]? = nil
 
     @State private var queue: [Exercise] = []
     @State private var total = Course.exercisesPerLesson
@@ -69,7 +82,7 @@ struct LessonView: View {
                 VStack(spacing: 0) {
                     topBar.padding(.horizontal, 18).padding(.top, 8)
                     ScrollView {
-                        ExerciseView(exercise: e, draft: $draft, locked: result != nil, color: color) {
+                        ExerciseView(exercise: e, draft: $draft, locked: result != nil, color: color, review: review != nil) {
                             // Matching finishes by itself.
                             check(force: true)
                         }
@@ -146,7 +159,7 @@ struct LessonView: View {
 
     @ViewBuilder private func bottomPanel(_ e: Exercise) -> some View {
         if let result {
-            FeedbackPanel(correct: result, exercise: e, color: color) { next() }
+            FeedbackPanel(correct: result, exercise: e, answer: e.rightAnswer(draft), color: color) { next() }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         } else if case .match = e.kind {
             EmptyView()
@@ -197,7 +210,7 @@ struct LessonView: View {
 
     private func start() {
         guard queue.isEmpty else { return }
-        queue = Course.exercises(for: lesson)
+        queue = review ?? Course.exercises(for: lesson)
         total = queue.count
         startedAt = Date()
         store.refresh()
@@ -207,15 +220,27 @@ struct LessonView: View {
     private func check(force: Bool = false) {
         guard let e = current, result == nil else { return }
         let ok = force || draft.isCorrect(for: e.kind)
+        // A right step that isn't the last one just moves on to the next step.
+        if ok, case .steps(let steps) = e.kind, draft.step < steps.count - 1 {
+            Sound.play(.flip, enabled: store.state.sound)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                draft.step += 1
+                draft.choice = nil
+            }
+            return
+        }
         result = ok
         feedbackTick += 1
+        Sound.play(ok ? .correct : .wrong, enabled: store.state.sound)
         if case .match = e.kind {} else { store.state.recordAnswer(correct: ok) }
         if ok {
             combo += 1
             bestCombo = max(bestCombo, combo)
+            if review != nil { store.state.clearMistake(e) }
         } else {
             combo = 0
             mistakes += 1
+            store.state.addMistake(e)
             if store.state.useHearts { store.state.loseHeart() }
         }
     }
@@ -242,10 +267,16 @@ struct LessonView: View {
         let xp = 10 + (perfect ? 5 : 0) + min(5, bestCombo / 3)
         let before = store.state.currentStreak()
         let extended = store.state.addXP(xp)
-        store.state.completeLesson(lesson)
+        if review == nil {
+            store.state.completeLesson(lesson)
+            if perfect { store.state.perfectLessons += 1 }
+        }
+        let badges = store.state.collectBadges()
+        Sound.play(.complete, enabled: store.state.sound)
+        Reminder.reschedule(store.state)
         finished = LessonResult(xp: xp, accuracy: Double(total) / Double(total + mistakes), seconds: Date().timeIntervalSince(startedAt),
                                 perfect: perfect, streak: store.state.currentStreak(), streakGrew: extended && store.state.currentStreak() > before,
-                                crowns: store.state.crowns(lesson))
+                                crowns: review == nil ? store.state.crowns(lesson) : nil, badges: badges.map(\.id))
     }
 }
 
@@ -256,7 +287,9 @@ struct LessonResult: Equatable {
     let perfect: Bool
     let streak: Int
     let streakGrew: Bool
-    let crowns: Int
+    /// nil for a review session.
+    let crowns: Int?
+    let badges: [String]
 }
 
 // MARK: - Exercise views
@@ -266,10 +299,17 @@ struct ExerciseView: View {
     @Binding var draft: AnswerDraft
     let locked: Bool
     let color: Color
+    var review = false
     let onMatched: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
+            if review {
+                Label("Fra dine fejl", systemImage: "arrow.counterclockwise")
+                    .font(.caption.weight(.heavy))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.heart)
+            }
             Text(exercise.prompt)
                 .font(.system(.title2, design: .rounded).weight(.heavy))
             if !exercise.question.isEmpty {
@@ -305,6 +345,10 @@ struct ExerciseView: View {
                 BuildAnswerView(tiles: tiles, picked: $draft.tiles, locked: locked)
             case .match(let left, let right):
                 MatchView(left: left, right: right, color: color, onDone: onMatched)
+            case .steps(let steps):
+                StepsView(steps: steps, draft: $draft, locked: locked, color: color)
+            case .typed(_, let upToConstant):
+                TypedAnswerView(keys: $draft.typed, locked: locked, upToConstant: upToConstant, color: color)
             }
         }
     }
@@ -447,9 +491,11 @@ private struct MatchView: View {
 private struct FeedbackPanel: View {
     let correct: Bool
     let exercise: Exercise
+    let answer: String
     let color: Color
     let onContinue: () -> Void
     @State private var showWhy = false
+    @State private var showGraph = false
 
     private static let praise = ["Fantastisk!", "Flot!", "Præcis!", "Godt gået!", "Sådan!", "Helt rigtigt!"]
     @State private var title = FeedbackPanel.praise.randomElement()!
@@ -458,11 +504,17 @@ private struct FeedbackPanel: View {
         let tone: Color = correct ? .good : .bad
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.title)
+                Mascot(mood: correct ? .cheer : .sad, size: 34)
+                    .frame(width: 42, height: 44)
                 Text(correct ? title : "Ikke helt")
                     .font(.system(.title2, design: .rounded).weight(.heavy))
                 Spacer()
+                if let f = exercise.graphF, let d = exercise.graphD, !f.isEmpty, !d.isEmpty {
+                    Button { withAnimation(.smooth) { showGraph.toggle() } } label: {
+                        Image(systemName: showGraph ? "chart.xyaxis.line" : "chart.line.uptrend.xyaxis").font(.title2)
+                    }
+                    .accessibilityLabel("Vis graf")
+                }
                 if !exercise.explanation.isEmpty {
                     Button { withAnimation(.smooth) { showWhy.toggle() } } label: {
                         Image(systemName: showWhy ? "chevron.down.circle.fill" : "questionmark.circle.fill").font(.title2)
@@ -471,11 +523,15 @@ private struct FeedbackPanel: View {
                 }
             }
             .foregroundStyle(tone)
-            if !correct, !exercise.rightAnswer.isEmpty {
+            if !correct, !answer.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Rigtigt svar:").font(.subheadline.weight(.bold)).foregroundStyle(tone)
-                    MathText(markup: exercise.rightAnswer, size: 22, weight: .semibold, alignment: .leading)
+                    MathText(markup: answer, size: 22, weight: .semibold, alignment: .leading)
                 }
+            }
+            if showGraph, let f = exercise.graphF, let d = exercise.graphD {
+                GraphView(f: f, d: d)
+                    .transition(.opacity)
             }
             if showWhy || !correct {
                 MathText(markup: exercise.explanation, size: 16, weight: .medium, alignment: .leading)
@@ -506,23 +562,19 @@ struct LessonResultView: View {
     var body: some View {
         VStack(spacing: 22) {
             Spacer()
-            ZStack {
-                Circle().fill(color.gradient).frame(width: 150, height: 150)
-                    .glassCircle(tint: color.opacity(0.3))
-                Image(systemName: result.perfect ? "star.fill" : "checkmark")
-                    .font(.system(size: 64, weight: .black))
-                    .foregroundStyle(.white)
-            }
-            .scaleEffect(appear ? 1 : 0.3)
-            .rotationEffect(.degrees(appear ? 0 : -30))
+            Mascot(mood: .cheer, size: 120)
+                .scaleEffect(appear ? 1 : 0.3)
+                .rotationEffect(.degrees(appear ? 0 : -20))
             Text(result.perfect ? "Fejlfrit!" : "Lektion klaret!")
                 .font(.system(.largeTitle, design: .rounded).weight(.heavy))
-            HStack(spacing: 4) {
-                ForEach(0..<ProgressState.maxCrowns, id: \.self) { i in
-                    Image(systemName: "crown.fill").foregroundStyle(i < result.crowns ? Color.gold : Color.secondary.opacity(0.3))
+            if let crowns = result.crowns {
+                HStack(spacing: 4) {
+                    ForEach(0..<ProgressState.maxCrowns, id: \.self) { i in
+                        Image(systemName: "crown.fill").foregroundStyle(i < crowns ? Color.gold : Color.secondary.opacity(0.3))
+                    }
                 }
+                .font(.title3)
             }
-            .font(.title3)
             HStack(spacing: 12) {
                 tile("XP", "+\(result.xp)", "bolt.fill", .gold)
                 tile("Præcision", "\(Int((result.accuracy * 100).rounded())) %", "target", .good)
@@ -530,6 +582,24 @@ struct LessonResultView: View {
             }
             .opacity(appear ? 1 : 0)
             .offset(y: appear ? 0 : 20)
+            ForEach(Badge.all.filter { result.badges.contains($0.id) }) { badge in
+                HStack(spacing: 12) {
+                    Image(systemName: badge.symbol)
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 46, height: 46)
+                        .background(Color(hex: badge.colorHex).gradient, in: Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ny bedrift: \(badge.title)").font(.system(.headline, design: .rounded).weight(.heavy))
+                        Text(badge.detail).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(12)
+                .glassCard(20, tint: Color(hex: badge.colorHex).opacity(0.12))
+                .padding(.horizontal, 20)
+                .opacity(appear ? 1 : 0)
+            }
             if result.streakGrew {
                 Label("\(result.streak) \(result.streak == 1 ? "dag" : "dage") i træk!", systemImage: "flame.fill")
                     .font(.system(.title3, design: .rounded).weight(.heavy))

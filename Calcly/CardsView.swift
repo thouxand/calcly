@@ -109,7 +109,10 @@ struct CardsView: View {
                     .offset(x: drag.width, y: drag.height * 0.2)
                     .rotationEffect(.degrees(Double(drag.width) / 18))
                     .overlay(alignment: .top) { swipeHint }
-                    .onTapGesture { withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { flipped.toggle() } }
+                    .onTapGesture {
+                        Sound.play(.flip, enabled: store.state.sound)
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { flipped.toggle() }
+                    }
                     .gesture(
                         DragGesture()
                             .onChanged { if flipped { drag = $0.translation } }
@@ -138,7 +141,10 @@ struct CardsView: View {
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
-                    Button("Vend kortet") { withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { flipped = true } }
+                    Button("Vend kortet") {
+                        Sound.play(.flip, enabled: store.state.sound)
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) { flipped = true }
+                    }
                         .buttonStyle(ChunkyButtonStyle(color: .accentColor))
                 }
             }
@@ -147,9 +153,7 @@ struct CardsView: View {
         } else {
             VStack(spacing: 20) {
                 Spacer()
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(Color.good)
+                Mascot(mood: .cheer, size: 110)
                 Text("Godt gået!").font(.system(.largeTitle, design: .rounded).weight(.heavy))
                 Text("Du kunne \(known) af \(seen) kort.")
                     .foregroundStyle(.secondary)
@@ -192,10 +196,13 @@ struct CardsView: View {
         guard let card = session.first else { return }
         store.state.grade(card.id, knew: knew)
         seen += 1
+        Sound.play(knew ? .correct : .wrong, enabled: store.state.sound)
         if knew {
             known += 1
             store.state.addXP(1)
+            Reminder.reschedule(store.state)
         }
+        if session.count == 1 { _ = store.state.collectBadges() }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
             session.removeFirst()
             // One more go at the end for a card you didn't know.

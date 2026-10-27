@@ -8,17 +8,37 @@ enum Skill: String, Codable, CaseIterable {
     case integralPowers, basicIntegrals, integralLinear
     case substitutionIdentify, substitution
     case byPartsRule, byParts
+    case chainSteps, substitutionSteps
+    case limitsBasic, limitsAlgebra
+    case definiteIntegrals
+    case partialDerivatives
 
     var isIntegration: Bool {
         switch self {
-        case .integralPowers, .basicIntegrals, .integralLinear, .substitutionIdentify, .substitution, .byPartsRule, .byParts: return true
+        case .integralPowers, .basicIntegrals, .integralLinear, .substitutionIdentify, .substitution, .byPartsRule, .byParts,
+             .substitutionSteps, .definiteIntegrals: return true
+        default: return false
+        }
+    }
+
+    /// Skills whose answers are short formulas you can type in.
+    var typable: Bool {
+        switch self {
+        case .powerRule, .powerSums, .basicDerivatives, .chainLinear, .chainInner, .integralPowers, .integralLinear, .productRule: return true
         default: return false
         }
     }
 }
 
-struct Exercise: Identifiable {
-    enum Kind {
+struct Exercise: Identifiable, Codable {
+    /// One step of a step-by-step exercise.
+    struct Step: Codable, Hashable {
+        var prompt: String
+        var options: [String]
+        var correct: Int
+    }
+
+    enum Kind: Codable {
         /// Pick one answer.
         case choice([String], correct: Int)
         /// Is the statement true?
@@ -27,15 +47,22 @@ struct Exercise: Identifiable {
         case match([String], [String])
         /// Tap tiles in order. Any of `answers` counts as right.
         case build(tiles: [String], answers: [[String]])
+        /// Several choices in a row that lead to the answer.
+        case steps([Step])
+        /// Write the answer with the maths keyboard; any equivalent formula counts.
+        case typed(answer: String, upToConstant: Bool)
     }
 
-    let id = UUID()
+    var id = UUID()
     var prompt: String
     var question: String
     var kind: Kind
     /// Shown after answering: the rule and the right answer.
     var explanation: String
     var skill: Skill
+    /// f and f′ as markup, so the feedback can draw both graphs.
+    var graphF: String? = nil
+    var graphD: String? = nil
 }
 
 // MARK: - Building blocks
@@ -73,14 +100,25 @@ enum Generator {
         case .substitution: return substitution()
         case .byPartsRule: return byPartsRule()
         case .byParts: return byParts()
+        case .chainSteps: return chainSteps()
+        case .substitutionSteps: return substitutionSteps()
+        case .limitsBasic: return limitsBasic()
+        case .limitsAlgebra: return limitsAlgebra()
+        case .definiteIntegrals: return definiteIntegral()
+        case .partialDerivatives: return partialDerivative()
         }
     }
 
     /// A quick true/false or three-option question, for the timed round.
     static func quick(_ skill: Skill) -> Exercise {
         var e = make(skill, level: 2)
-        if case .match = e.kind { e = make(skill, level: 2) }
-        if case .build = e.kind { e = make(skill, level: 2) }
+        for _ in 0..<6 {
+            switch e.kind {
+            case .choice, .trueFalse: break
+            default: e = make(skill, level: 2); continue
+            }
+            break
+        }
         switch e.kind {
         case .choice(let options, let correct):
             var keep = [options[correct]] + options.enumerated().filter { $0.offset != correct }.map(\.element).pick(2)
@@ -124,10 +162,27 @@ enum Generator {
     /// Picks a format: mostly multiple choice, sometimes true/false.
     private static func ask(_ prompt: String, _ question: String, tfLeft: String, correct: String, wrong: [String],
                             explanation: String, skill: Skill) -> Exercise {
-        if Int.random(in: 0..<10) < 3 {
-            return trueFalse(tfLeft, correct: correct, wrong: wrong, explanation: explanation, skill: skill)
+        var e: Exercise
+        let roll = Int.random(in: 0..<20)
+        if roll < 3, skill.typable, Evaluator.canEvaluate(correct) {
+            let typedPrompt = prompt.replacingOccurrences(of: "Find", with: "Skriv")
+            e = Exercise(prompt: typedPrompt, question: question,
+                         kind: .typed(answer: correct, upToConstant: correct.hasSuffix(" + C")),
+                         explanation: explanation, skill: skill)
+        } else if roll < 9 {
+            e = trueFalse(tfLeft, correct: correct, wrong: wrong, explanation: explanation, skill: skill)
+        } else {
+            e = choice(prompt, question, correct: correct, wrong: wrong, explanation: explanation, skill: skill)
         }
-        return choice(prompt, question, correct: correct, wrong: wrong, explanation: explanation, skill: skill)
+        // Derivatives get a graph of f and f′ in the feedback.
+        if prompt == "Find f′(x)", question.hasPrefix("f(x) = ") {
+            let f = String(question.dropFirst(7))
+            if Evaluator.canEvaluate(f), Evaluator.canEvaluate(correct) {
+                e.graphF = f
+                e.graphD = correct
+            }
+        }
+        return e
     }
 
     private static func diff(_ f: String) -> String { "f(x) = \(f)" }
@@ -335,6 +390,14 @@ enum Generator {
                           skill: inner.linear ? .chainLinear : .chainInner)
         }
         let skill: Skill = inner.body.isEmpty ? .chainLinear : .chainInner
+        let p = chainParts(inner)
+        return ask("Find f′(x)", diff(p.f), tfLeft: "(\(p.f))′", correct: p.d, wrong: p.wrong, explanation: p.explanation, skill: skill)
+    }
+
+    private struct ChainParts { let f: String; let d: String; let wrong: [String]; let du: String; let outerX: String; let explanation: String }
+
+    /// A composite function, its derivative and typical wrong answers.
+    private static func chainParts(_ inner: Inner) -> ChainParts {
         let n = Int.random(in: 2...5)
         let outers = outers(for: inner)
         let o = outers.randomElement()!
@@ -388,7 +451,26 @@ enum Generator {
         case .sqrt: outerName = "√u"
         }
         let explanation = "Kædereglen: ydre afledt · indre afledt.\nIndre: u = \(inner.u), u′ = \(du)\nYdre: \(outerName)\nf′(x) = \(d)"
-        return ask("Find f′(x)", diff(f), tfLeft: "(\(f))′", correct: d, wrong: wrong, explanation: explanation, skill: skill)
+        let outerX = apply(o, "x", n: n).replacingOccurrences(of: "(x)^{", with: "x^{").replacingOccurrences(of: "√(x)", with: "√x")
+        return ChainParts(f: f, d: d, wrong: wrong, du: du, outerX: outerX, explanation: explanation)
+    }
+
+    /// Kædereglen i tre trin: indre funktion, dens afledte, og så svaret.
+    private static func chainSteps() -> Exercise {
+        let inner = Bool.random() ? linearInners() : polynomialInners()
+        let p = chainParts(inner)
+        func step(_ prompt: String, _ correct: String, _ wrong: [String]) -> Exercise.Step {
+            var options = [correct]
+            for w in wrong.shuffled() where !options.contains(w) && options.count < 4 { options.append(w) }
+            options.shuffle()
+            return Exercise.Step(prompt: prompt, options: options, correct: options.firstIndex(of: correct)!)
+        }
+        let steps = [
+            step("Trin 1: Hvad er den indre funktion u?", inner.u, [p.outerX, p.du, "x", p.f]),
+            step("Trin 2: Hvad er u′?", p.du, [inner.u, "x", M.term(inner.coef + Q(1), inner.body), M.number(inner.coef)]),
+            step("Trin 3: Hvad er f′(x)?", p.d, p.wrong),
+        ]
+        return Exercise(prompt: "Trin for trin", question: diff(p.f), kind: .steps(steps), explanation: p.explanation, skill: .chainSteps)
     }
 
     private static func chainIdentify() -> Exercise {
@@ -496,6 +578,14 @@ enum Generator {
     private enum SubOuter: CaseIterable { case cos, sin, exp, pow, recip }
 
     private static func substitution() -> Exercise {
+        let p = substitutionParts()
+        return ask("Find stamfunktionen", integral(p.integrand), tfLeft: integral(p.integrand), correct: p.answer, wrong: p.wrong,
+                   explanation: p.explanation, skill: .substitution)
+    }
+
+    private struct SubParts { let inner: SubInner; let integrand: String; let answer: String; let wrong: [String]; let explanation: String }
+
+    private static func substitutionParts() -> SubParts {
         let inner = subInners.randomElement()!
         var outers = SubOuter.allCases
         if !inner.positive { outers.removeAll { $0 == .recip } }
@@ -530,8 +620,26 @@ enum Generator {
         let wrong = [plusC(M.term(G.0, G.1)), plusC(M.term(factor * W.0, W.1)), plusC(M.term(m * G.0, G.1)),
                      plusC(product(m, inner.body, M.term(G.0, G.1))), plusC(M.term(inner.coef * G.0, G.1))]
         let explanation = "Sæt u = \(u), så du = \(M.term(inner.coef, inner.body)) dx.\n\(integral(integrand)) = \(answer)"
-        return ask("Find stamfunktionen", integral(integrand), tfLeft: integral(integrand), correct: answer, wrong: wrong,
-                   explanation: explanation, skill: .substitution)
+        return SubParts(inner: inner, integrand: integrand, answer: answer, wrong: wrong, explanation: explanation)
+    }
+
+    /// Substitution i tre trin: vælg u, find du, og find så stamfunktionen.
+    private static func substitutionSteps() -> Exercise {
+        let p = substitutionParts()
+        let du = M.term(p.inner.coef, p.inner.body)
+        func step(_ prompt: String, _ correct: String, _ wrong: [String]) -> Exercise.Step {
+            var options = [correct]
+            for w in wrong.shuffled() where !options.contains(w) && options.count < 4 { options.append(w) }
+            options.shuffle()
+            return Exercise.Step(prompt: prompt, options: options, correct: options.firstIndex(of: correct)!)
+        }
+        let steps = [
+            step("Trin 1: Hvad skal u være?", "u = \(p.inner.u)", ["u = \(du)", "u = x", "u = \(p.integrand)"]),
+            step("Trin 2: Hvad er du?", "du = \(du) dx", ["du = \(p.inner.u) dx", "du = dx", "du = \(M.term(p.inner.coef, "")) dx"]),
+            step("Trin 3: Hvad er stamfunktionen?", p.answer, p.wrong),
+        ]
+        return Exercise(prompt: "Trin for trin", question: integral(p.integrand), kind: .steps(steps),
+                        explanation: p.explanation, skill: .substitutionSteps)
     }
 
     private static func substitutionIdentify() -> Exercise {
@@ -544,6 +652,123 @@ enum Generator {
         return choice("Hvad skal u være?", integral(integrand), correct: "u = \(inner.u)",
                       wrong: ["u = \(du)", "u = \(outer)", "u = x", "u = \(integrand)"],
                       explanation: "Vælg u som den indre funktion, hvis afledte (\(du)) også står i integralet.", skill: .substitutionIdentify)
+    }
+
+    // MARK: Limits
+
+    private static func lim(_ to: String, _ body: String) -> String { "lim_{x → \(to)} \(body)" }
+
+    private static let limitValues = ["0", "1", "e", "∞", "−∞", "findes ikke"]
+
+    private static func limitsBasic() -> Exercise {
+        if Bool.random() {
+            // Continuous: just put the number in.
+            let a = Int.random(in: -2...3)
+            let b = Q([1, 2, 3, -1].randomElement()!), c = Q(Int.random(in: -4...4)), d = Q(Int.random(in: -5...5))
+            let f = M.sum([M.term(b, "x^{2}"), M.term(c, "x"), M.number(d)])
+            let value = b * Q(a * a) + c * Q(a) + d
+            let shownA = a < 0 ? M.minus + "\(-a)" : "\(a)"
+            let answer = M.number(value)
+            let wrong = [M.number(value + Q(1)), M.number(d), M.number(b * Q(a) + c * Q(a) + d), M.number(value + Q(-2)), "∞"]
+            return choice("Find grænseværdien", lim(shownA, "(\(f))"), correct: answer, wrong: wrong,
+                          explanation: "Funktionen er kontinuert, så du kan sætte x = \(shownA) ind.\n= \(answer)", skill: .limitsBasic)
+        }
+        let facts: [(String, String, String)] = [
+            (lim("0", "\\frac{sin(x)}{x}"), "1", "En klassiker: sin(x) ≈ x tæt på 0."),
+            (lim("0", "\\frac{e^{x} − 1}{x}"), "1", "e^{x} ≈ 1 + x tæt på 0."),
+            (lim("∞", "(1 + \\frac{1}{x})^{x}"), "e", "Det er sådan, tallet e kan defineres."),
+            (lim("∞", "\\frac{ln(x)}{x}"), "0", "x vokser meget hurtigere end ln(x)."),
+            (lim("∞", "\\frac{1}{x}"), "0", "1 delt med noget meget stort går mod 0."),
+            (lim("∞", "e^{−x}"), "0", "e^{−x} = \\frac{1}{e^{x}}, og e^{x} vokser mod ∞."),
+            (lim("∞", "\\frac{x^{2}}{e^{x}}"), "0", "e^{x} vokser hurtigere end enhver potens af x."),
+            (lim("0^{+}", "ln(x)"), "−∞", "ln(x) går mod −∞, når x går mod 0 fra højre."),
+        ]
+        let (q, answer, why) = facts.randomElement()!
+        return choice("Find grænseværdien", q, correct: answer, wrong: limitValues, explanation: why, skill: .limitsBasic)
+    }
+
+    private static func limitsAlgebra() -> Exercise {
+        if Bool.random() {
+            // 0/0 that cancels: (x − a)(x + b) / (x − a) → a + b.
+            let a = Int.random(in: 1...5), b = [1, 2, 3, 4, -1, -2].filter { $0 != -a }.randomElement()!
+            let num = M.sum([M.x(2), M.term(Q(b - a), "x"), M.number(Q(-a * b))])
+            let q = lim("\(a)", M.frac(num, "x − \(a)"))
+            let answer = M.number(Q(a + b))
+            return choice("Find grænseværdien", q, correct: answer,
+                          wrong: ["0", "findes ikke", "\(a)", "\(a - b)", "\(b)", "∞"].map { $0.hasPrefix("-") ? M.minus + $0.dropFirst() : $0 },
+                          explanation: "Indsæt giver \\frac{0}{0}. Faktorisér: tælleren er (x − \(a))(x \(b < 0 ? M.minus : "+") \(abs(b))), så (x − \(a)) går ud.\nTilbage er x \(b < 0 ? M.minus : "+") \(abs(b)) → \(answer)",
+                          skill: .limitsAlgebra)
+        }
+        // x → ∞ for a fraction of polynomials: compare the highest powers.
+        let n = Int.random(in: 1...3), m = Int.random(in: 1...3)
+        let p = Int.random(in: 1...6), q = Int.random(in: 1...6)
+        let top = M.sum([M.term(Q(p), M.x(n)), "1"]), bottom = M.sum([M.term(Q(q), M.x(m)), M.number(Q(-2))])
+        let answer = n == m ? M.number(Q(p, q)) : (n < m ? "0" : "∞")
+        let wrong = [M.number(Q(p, q)), "0", "∞", M.number(Q(q, p)), "1", "\(p)"]
+        return choice("Find grænseværdien", lim("∞", M.frac(top, bottom)), correct: answer, wrong: wrong,
+                      explanation: "Kig på de højeste potenser: \(M.x(n)) over \(M.x(m)).\nSamme grad: forholdet mellem koefficienterne. Højest i nævneren: 0. Højest i tælleren: ∞.",
+                      skill: .limitsAlgebra)
+    }
+
+    // MARK: Definite integrals
+
+    private static func definiteIntegral() -> Exercise {
+        if Int.random(in: 0..<4) == 0 {
+            let facts: [(String, String, [String])] = [
+                ("∫_{0}^{π} sin(x) dx", "2", ["0", "1", "−2", "π"]),
+                ("∫_{0}^{1} e^{x} dx", "e − 1", ["e", "1", "e + 1", "1 − e"]),
+                ("∫_{1}^{e} \\frac{1}{x} dx", "1", ["e", "0", "e − 1", "\\frac{1}{e}"]),
+                ("∫_{0}^{π/2} cos(x) dx", "1", ["0", "−1", "\\frac{π}{2}", "2"]),
+            ]
+            let (q, a, w) = facts.randomElement()!
+            return choice("Udregn integralet", q, correct: a, wrong: w,
+                          explanation: "Find stamfunktionen F, og udregn F(b) − F(a).", skill: .definiteIntegrals)
+        }
+        let n = Int.random(in: 0...3)
+        let a = Q([1, 2, 3, 4, 6].randomElement()!)
+        let lo = Int.random(in: 0...1), hi = lo + Int.random(in: 1...3)
+        func power(_ v: Int, _ k: Int) -> Q { Q(Int(pow(Double(v), Double(k)))) }
+        let F = a / Q(n + 1)
+        let value = F * (power(hi, n + 1) + -power(lo, n + 1))
+        let integrand = M.term(a, M.x(n))
+        let q = "∫_{\(lo)}^{\(hi)} \(integrand) dx"
+        let answer = M.number(value)
+        let wrong = [M.number(-value), M.number(a * (power(hi, n + 1) + -power(lo, n + 1))), M.number(F * power(hi, n + 1) + F * power(lo, n + 1)),
+                     M.number(a * power(hi, n)), M.number(value + Q(1))]
+        let antiderivative = M.term(F, M.x(n + 1))
+        return choice("Udregn integralet", q, correct: answer, wrong: wrong,
+                      explanation: "Stamfunktion: F(x) = \(antiderivative)\nF(\(hi)) − F(\(lo)) = \(answer)", skill: .definiteIntegrals)
+    }
+
+    // MARK: Partial derivatives
+
+    private static func partialDerivative() -> Exercise {
+        // Two or three terms a·x^i·y^j.
+        var terms: [(Q, Int, Int)] = []
+        let shapes = [(2, 1), (1, 2), (3, 0), (0, 3), (1, 1), (2, 0), (0, 2), (2, 2), (1, 0), (0, 1)]
+        // Both variables must appear, or one of the answers is just 0.
+        repeat {
+            terms = shapes.pick(Int.random(in: 2...3)).map { (Q([1, 2, 3, 4, 5, -1, -2, -3].randomElement()!), $0.0, $0.1) }
+        } while !terms.contains(where: { $0.1 > 0 }) || !terms.contains(where: { $0.2 > 0 })
+        func mono(_ c: Q, _ i: Int, _ j: Int) -> String {
+            let y = j == 0 ? "" : (j == 1 ? "y" : "y^{\(j)}")
+            return M.term(c, M.x(i) + y)
+        }
+        func dx(_ t: [(Q, Int, Int)]) -> String { M.sum(t.filter { $0.1 > 0 }.map { mono($0.0 * Q($0.1), $0.1 - 1, $0.2) }) }
+        func dy(_ t: [(Q, Int, Int)]) -> String { M.sum(t.filter { $0.2 > 0 }.map { mono($0.0 * Q($0.2), $0.1, $0.2 - 1) }) }
+        let f = M.sum(terms.map { mono($0.0, $0.1, $0.2) })
+        let byX = Bool.random()
+        let answer = byX ? dx(terms) : dy(terms)
+        let other = byX ? dy(terms) : dx(terms)
+        // Typical slip: keeping the terms that don't contain the variable.
+        let keep = M.sum(terms.map { t -> String in
+            let k = byX ? t.1 : t.2
+            return k > 0 ? (byX ? mono(t.0 * Q(t.1), t.1 - 1, t.2) : mono(t.0 * Q(t.2), t.1, t.2 - 1)) : mono(t.0, t.1, t.2)
+        })
+        let both = M.sum(terms.map { mono($0.0 * Q(max(1, $0.1 * $0.2)), max(0, $0.1 - 1), max(0, $0.2 - 1)) })
+        let v = byX ? "x" : "y", w = byX ? "y" : "x"
+        return choice("Find ∂f/∂\(v)", "f(x, y) = \(f)", correct: answer, wrong: [other, keep, both, M.negate(answer)],
+                      explanation: "Differentiér efter \(v), og behandl \(w) som en konstant.\n∂f/∂\(v) = \(answer)", skill: .partialDerivatives)
     }
 
     // MARK: Integration by parts

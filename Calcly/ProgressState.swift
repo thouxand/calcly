@@ -8,6 +8,12 @@ struct CardState: Codable, Equatable {
 
 /// Everything the app remembers. Saved as JSON.
 struct ProgressState: Codable, Equatable {
+    static func == (a: ProgressState, b: ProgressState) -> Bool {
+        let e = JSONEncoder()
+        e.outputFormatting = .sortedKeys
+        return (try? e.encode(a)) == (try? e.encode(b))
+    }
+
     static let maxHearts = 5
     static let heartRefill: TimeInterval = 30 * 60
     static let maxCrowns = 5
@@ -30,6 +36,18 @@ struct ProgressState: Codable, Equatable {
     var lessonsDone = 0
     var correctAnswers = 0
     var totalAnswers = 0
+    /// Exercises answered wrong, for "Øv dine fejl".
+    var mistakes: [Exercise] = []
+    var perfectLessons = 0
+    var badges: [String] = []
+    /// The day a missed day was covered by the weekly streak freeze.
+    var lastFreezeUsed: String?
+    var sound = true
+    var reminder = false
+    var reminderHour = 19
+    var reminderMinute = 0
+
+    static let maxMistakes = 40
 
     init() {}
 
@@ -53,6 +71,14 @@ struct ProgressState: Codable, Equatable {
         lessonsDone = try c.decodeIfPresent(Int.self, forKey: .lessonsDone) ?? d.lessonsDone
         correctAnswers = try c.decodeIfPresent(Int.self, forKey: .correctAnswers) ?? d.correctAnswers
         totalAnswers = try c.decodeIfPresent(Int.self, forKey: .totalAnswers) ?? d.totalAnswers
+        mistakes = (try? c.decodeIfPresent([Exercise].self, forKey: .mistakes)) ?? d.mistakes
+        perfectLessons = try c.decodeIfPresent(Int.self, forKey: .perfectLessons) ?? d.perfectLessons
+        badges = try c.decodeIfPresent([String].self, forKey: .badges) ?? d.badges
+        lastFreezeUsed = try c.decodeIfPresent(String.self, forKey: .lastFreezeUsed)
+        sound = try c.decodeIfPresent(Bool.self, forKey: .sound) ?? d.sound
+        reminder = try c.decodeIfPresent(Bool.self, forKey: .reminder) ?? d.reminder
+        reminderHour = try c.decodeIfPresent(Int.self, forKey: .reminderHour) ?? d.reminderHour
+        reminderMinute = try c.decodeIfPresent(Int.self, forKey: .reminderMinute) ?? d.reminderMinute
     }
 
     // MARK: Days
@@ -69,7 +95,21 @@ struct ProgressState: Codable, Equatable {
     /// The streak as it stands today: it breaks if yesterday was skipped.
     func currentStreak(now: Date = Date()) -> Int {
         guard let last = lastActiveDay else { return 0 }
-        return last == Self.dayKey(now) || last == Self.dayKey(daysBefore: 1, from: now) ? streak : 0
+        if last == Self.dayKey(now) || last == Self.dayKey(daysBefore: 1, from: now) { return streak }
+        // One missed day a week is covered by the streak freeze.
+        if last == Self.dayKey(daysBefore: 2, from: now) && freezeAvailable(now: now) { return streak }
+        return 0
+    }
+
+    /// The freeze comes back seven days after it was used.
+    func freezeAvailable(now: Date = Date()) -> Bool {
+        guard let used = lastFreezeUsed else { return true }
+        return used <= Self.dayKey(daysBefore: 7, from: now)
+    }
+
+    /// True when the freeze is saving the streak right now (yesterday was missed).
+    func freezeActive(now: Date = Date()) -> Bool {
+        lastActiveDay == Self.dayKey(daysBefore: 2, from: now) && freezeAvailable(now: now) && streak > 0
     }
 
     func xpToday(now: Date = Date()) -> Int { dailyXP[Self.dayKey(now)] ?? 0 }
@@ -95,7 +135,14 @@ struct ProgressState: Codable, Equatable {
             dailyXP = dailyXP.filter { $0.key >= cutoff }
         }
         guard lastActiveDay != today else { return false }
-        streak = lastActiveDay == Self.dayKey(daysBefore: 1, from: now) ? streak + 1 : 1
+        if lastActiveDay == Self.dayKey(daysBefore: 1, from: now) {
+            streak += 1
+        } else if lastActiveDay == Self.dayKey(daysBefore: 2, from: now) && freezeAvailable(now: now) {
+            lastFreezeUsed = Self.dayKey(daysBefore: 1, from: now)
+            streak += 1
+        } else {
+            streak = 1
+        }
         bestStreak = max(bestStreak, streak)
         lastActiveDay = today
         return true
@@ -150,6 +197,29 @@ struct ProgressState: Codable, Equatable {
         if correct { correctAnswers += 1 }
     }
 
+    // MARK: Mistakes
+
+    private static func key(_ e: Exercise) -> String { e.prompt + "|" + e.question }
+
+    mutating func addMistake(_ e: Exercise) {
+        guard !mistakes.contains(where: { Self.key($0) == Self.key(e) }) else { return }
+        mistakes.append(e)
+        if mistakes.count > Self.maxMistakes { mistakes.removeFirst(mistakes.count - Self.maxMistakes) }
+    }
+
+    mutating func clearMistake(_ e: Exercise) {
+        mistakes.removeAll { Self.key($0) == Self.key(e) }
+    }
+
+    // MARK: Badges
+
+    /// Badges earned now that weren't before. They are recorded as earned.
+    mutating func collectBadges() -> [Badge] {
+        let new = Badge.all.filter { !badges.contains($0.id) && $0.earned(self) }
+        badges += new.map(\.id)
+        return new
+    }
+
     // MARK: Rule cards
 
     func card(_ id: String) -> CardState { cards[id] ?? CardState() }
@@ -175,4 +245,31 @@ struct ProgressState: Codable, Equatable {
         }
         cards[cardID] = c
     }
+}
+
+/// Achievements shown on the profile.
+struct Badge: Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+    let symbol: String
+    let colorHex: String
+    let earned: (ProgressState) -> Bool
+
+    static let all: [Badge] = [
+        Badge(id: "first", title: "Første skridt", detail: "Klar din første lektion", symbol: "figure.walk", colorHex: "#22C55E") { $0.lessonsDone >= 1 },
+        Badge(id: "ten", title: "I gang", detail: "Klar 10 lektioner", symbol: "graduationcap.fill", colorHex: "#3B82F6") { $0.lessonsDone >= 10 },
+        Badge(id: "fifty", title: "Flittig", detail: "Klar 50 lektioner", symbol: "books.vertical.fill", colorHex: "#6366F1") { $0.lessonsDone >= 50 },
+        Badge(id: "perfect", title: "Fejlfri", detail: "En lektion uden fejl", symbol: "star.fill", colorHex: "#EAB308") { $0.perfectLessons >= 1 },
+        Badge(id: "perfect10", title: "Skarpskytte", detail: "10 lektioner uden fejl", symbol: "target", colorHex: "#F97316") { $0.perfectLessons >= 10 },
+        Badge(id: "streak3", title: "På vej", detail: "3 dage i træk", symbol: "flame", colorHex: "#FB923C") { $0.bestStreak >= 3 },
+        Badge(id: "streak7", title: "En hel uge", detail: "7 dage i træk", symbol: "flame.fill", colorHex: "#F97316") { $0.bestStreak >= 7 },
+        Badge(id: "streak30", title: "Uknuselig", detail: "30 dage i træk", symbol: "bolt.heart.fill", colorHex: "#EF4444") { $0.bestStreak >= 30 },
+        Badge(id: "quick15", title: "Lynhurtig", detail: "15 point i Lynrunden", symbol: "bolt.fill", colorHex: "#EAB308") { $0.bestQuick >= 15 },
+        Badge(id: "quick30", title: "Lynet", detail: "30 point i Lynrunden", symbol: "bolt.circle.fill", colorHex: "#CA8A04") { $0.bestQuick >= 30 },
+        Badge(id: "cards10", title: "Hukommelse", detail: "10 kort sidder på rygraden", symbol: "brain.head.profile", colorHex: "#A855F7") { $0.masteredCards >= 10 },
+        Badge(id: "cardsAll", title: "Rygraden", detail: "Alle kort sidder", symbol: "brain.fill", colorHex: "#7C3AED") { $0.masteredCards >= Course.cards.count },
+        Badge(id: "crown5", title: "Kronjuvel", detail: "5 kroner i én lektion", symbol: "crown.fill", colorHex: "#EAB308") { $0.crowns.values.contains { $0 >= ProgressState.maxCrowns } },
+        Badge(id: "course", title: "Hele kurset", detail: "Klar alle lektioner", symbol: "trophy.fill", colorHex: "#EAB308") { s in Course.lessons.allSatisfy { (s.crowns[$0.id] ?? 0) > 0 } },
+    ]
 }

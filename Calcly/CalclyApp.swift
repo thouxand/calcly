@@ -12,7 +12,10 @@ struct CalclyApp: App {
                 .environmentObject(store)
                 .preferredColorScheme(Appearance(rawValue: appearance)?.scheme)
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { store.refresh() }
+                    if phase == .active {
+                        store.refresh()
+                        Reminder.reschedule(store.state)
+                    }
                 }
         }
     }

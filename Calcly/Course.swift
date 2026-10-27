@@ -51,6 +51,8 @@ enum Course {
         CourseUnit(id: "chain", title: "Kædereglen", subtitle: "En funktion inden i en anden", colorHex: "#F97316", symbol: "link", lessons: [
             Lesson(id: "chain.identify", title: "Indre og ydre", skills: [.chainIdentify],
                    tip: "I f(g(x)) er g den indre funktion og f den ydre.\nEks.: sin(x^{2}) har indre x^{2} og ydre sin."),
+            Lesson(id: "chain.steps", title: "Trin for trin", skills: [.chainSteps],
+                   tip: "1. Find den indre funktion u.\n2. Differentiér den: u′.\n3. Ydre afledt (med u indeni) gange u′."),
             Lesson(id: "chain.linear", title: "Kædereglen I", skills: [.chainLinear],
                    tip: "(f(g(x)))′ = f′(g(x))·g′(x)\nMed kx indeni: gang med k.\n(sin(3x))′ = 3cos(3x)"),
             Lesson(id: "chain.inner", title: "Kædereglen II", skills: [.chainInner],
@@ -71,6 +73,8 @@ enum Course {
         CourseUnit(id: "sub", title: "Substitution", subtitle: "Kædereglen baglæns", colorHex: "#EC4899", symbol: "arrow.triangle.2.circlepath", lessons: [
             Lesson(id: "sub.identify", title: "Find u", skills: [.substitutionIdentify],
                    tip: "Vælg u som den indre funktion, hvis afledte også står i integralet.\n∫ 2x·cos(x^{2}) dx: u = x^{2}, du = 2x dx"),
+            Lesson(id: "sub.steps", title: "Trin for trin", skills: [.substitutionSteps],
+                   tip: "1. Vælg u (den indre funktion).\n2. Find du = u′ dx.\n3. Integrér i u, og sæt u tilbage."),
             Lesson(id: "sub.solve", title: "Substitution", skills: [.substitution],
                    tip: "∫ f(g(x))·g′(x) dx = F(g(x)) + C\nMangler der en faktor, så divider med den."),
         ]),
@@ -79,6 +83,20 @@ enum Course {
                    tip: "∫ f·g′ dx = f·g − ∫ f′·g dx\nVælg f, så den bliver enklere ved differentiation (ln, x^{n})."),
             Lesson(id: "parts.solve", title: "Delvis integration", skills: [.byParts, .byPartsRule],
                    tip: "∫ x·e^{x} dx: f = x, g′ = e^{x}\n= x·e^{x} − ∫ e^{x} dx = (x − 1)e^{x} + C"),
+        ]),
+        CourseUnit(id: "lim", title: "Grænseværdier", subtitle: "Hvad nærmer funktionen sig?", colorHex: "#06B6D4", symbol: "arrow.right.to.line", lessons: [
+            Lesson(id: "lim.basic", title: "Indsæt og klassikere", skills: [.limitsBasic],
+                   tip: "Er funktionen kontinuert, så sæt bare tallet ind.\nlim_{x → 0} \\frac{sin(x)}{x} = 1\nlim_{x → ∞} (1 + \\frac{1}{x})^{x} = e"),
+            Lesson(id: "lim.algebra", title: "0/0 og uendelig", skills: [.limitsAlgebra],
+                   tip: "Giver indsæt \\frac{0}{0}: faktorisér og forkort.\nMod ∞: kig kun på de højeste potenser i tæller og nævner."),
+        ]),
+        CourseUnit(id: "def", title: "Bestemte integraler", subtitle: "Areal under grafen", colorHex: "#84CC16", symbol: "chart.bar.fill", lessons: [
+            Lesson(id: "def.basic", title: "Fra a til b", skills: [.definiteIntegrals],
+                   tip: "∫_{a}^{b} f(x) dx = F(b) − F(a)\nFind stamfunktionen, sæt b ind, og træk F(a) fra."),
+        ]),
+        CourseUnit(id: "partial", title: "Partielle afledte", subtitle: "Funktioner af to variable", colorHex: "#A855F7", symbol: "cube.fill", lessons: [
+            Lesson(id: "partial.basic", title: "∂f/∂x og ∂f/∂y", skills: [.partialDerivatives],
+                   tip: "Differentiér efter én variabel, og behandl den anden som en konstant.\nf = x^{2}y ⇒ ∂f/∂x = 2xy, ∂f/∂y = x^{2}"),
         ]),
         CourseUnit(id: "spine", title: "Mester", subtitle: "Alt på én gang", colorHex: "#EAB308", symbol: "crown.fill", lessons: [
             Lesson(id: "spine.diff", title: "Al differentiation", skills: [.powerSums, .basicDerivatives, .productRule, .quotientRule, .chainLinear, .chainInner],
@@ -91,6 +109,9 @@ enum Course {
     ]
 
     static var lessons: [Lesson] { units.flatMap(\.lessons) }
+
+    /// Stands in for a lesson when you practise your mistakes.
+    static let reviewLesson = Lesson(id: "review", title: "Øv dine fejl", skills: [.powerRule], tip: "")
 
     static func unit(of lesson: Lesson) -> CourseUnit? { units.first { $0.lessons.contains(lesson) } }
 
@@ -144,5 +165,11 @@ enum Course {
         RuleCard(id: "i.sub", front: "Substitution\n∫ f(g(x))·g′(x) dx", back: "F(g(x)) + C", group: "Metoder"),
         RuleCard(id: "i.parts", front: "Delvis integration\n∫ f·g′ dx", back: "f·g − ∫ f′·g dx", group: "Metoder"),
         RuleCard(id: "i.linear", front: "∫ f(kx + b) dx", back: "\\frac{1}{k}F(kx + b) + C", group: "Metoder"),
+        RuleCard(id: "l.sinx", front: "lim_{x → 0} \\frac{sin(x)}{x}", back: "1", group: "Grænseværdier"),
+        RuleCard(id: "l.e", front: "lim_{x → ∞} (1 + \\frac{1}{x})^{x}", back: "e", group: "Grænseværdier"),
+        RuleCard(id: "l.ex", front: "lim_{x → 0} \\frac{e^{x} − 1}{x}", back: "1", group: "Grænseværdier"),
+        RuleCard(id: "l.poly", front: "lim_{x → ∞} \\frac{a·x^{n} + …}{b·x^{n} + …}", back: "\\frac{a}{b}  (samme grad)", group: "Grænseværdier"),
+        RuleCard(id: "i.definite", front: "∫_{a}^{b} f(x) dx", back: "F(b) − F(a)", group: "Metoder"),
+        RuleCard(id: "p.partial", front: "∂f/∂x", back: "Differentiér efter x, y er en konstant", group: "Metoder"),
     ]
 }
