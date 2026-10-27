@@ -12,16 +12,16 @@ En iPhone-app, hvor du øver differentiation og integration i Duolingo-stil, til
 Kræver iOS 18 eller nyere. På iOS 26 får du ægte Liquid Glass.
 
 ## Det kan appen
-**Lær** – en sti med 10 enheder og 28 lektioner:
+**Lær** – en sti med 10 enheder og 29 lektioner:
 - Differentiation: potensreglen, standardfunktioner, summer
-- Produkt- og kvotientreglen
+- Produkt- og kvotientreglen (også trin for trin)
 - Kædereglen: indre og ydre funktion, kx indeni, polynomier indeni
 - Integration: potenser, standardintegraler, kx indeni
 - Substitution og delvis integration
 - Grænseværdier, bestemte integraler og partielle afledte
 - Mester: alt blandet og Mesterprøven
 
-Hver lektion har 10 opgaver af typerne vælg-svaret, sandt/falsk, find parrene, byg svaret med brikker, trin for trin og skriv selv svaret med et matematik-tastatur (alle ligeværdige skrivemåder tæller som rigtige). Ved afledte kan du se grafen for f og f′ i feedbacken. Opgaverne bliver lavet på stedet, så de er nye hver gang. Svarer du forkert, kommer opgaven igen sidst i lektionen, og du får reglen forklaret. Hver lektion kan tages op til 5 gange for at få 5 kroner. Forkerte svar samles under **Øv dine fejl** øverst på stien.
+Hver lektion har 10 opgaver af typerne vælg-svaret, sandt/falsk, find parrene, byg svaret med brikker, trin for trin (produkt, kæde, substitution) og skriv selv svaret med et matematik-tastatur (alle ligeværdige skrivemåder tæller som rigtige). Ved afledte kan du se grafen for f og f′ i feedbacken. Opgaverne bliver lavet på stedet, så de er nye hver gang. Svarer du forkert, kommer opgaven igen sidst i lektionen, og du får reglen forklaret. Hver lektion kan tages op til 5 gange for at få 5 kroner. Forkerte svar samles under **Øv dine fejl** øverst på stien.
 
 **Lynrunde** – 60 sekunder med hurtige spørgsmål ("quick knowledge"). Point for hvert rigtigt svar og bonus for stimer. Rekorden bliver gemt.
 

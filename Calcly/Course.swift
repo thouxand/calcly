@@ -43,6 +43,8 @@ enum Course {
         CourseUnit(id: "prod", title: "Produkt og kvotient", subtitle: "Når funktioner ganges og deles", colorHex: "#8B5CF6", symbol: "multiply", lessons: [
             Lesson(id: "prod.product", title: "Produktreglen", skills: [.productRule],
                    tip: "(f·g)′ = f′·g + f·g′\nDifferentiér den ene ad gangen, og læg sammen."),
+            Lesson(id: "prod.steps", title: "Trin for trin", skills: [.productSteps],
+                   tip: "1. Find f′.\n2. Find g′.\n3. Sæt sammen: f′·g + f·g′"),
             Lesson(id: "prod.quotient", title: "Kvotientreglen", skills: [.quotientRule],
                    tip: "(\\frac{f}{g})′ = \\frac{f′·g − f·g′}{g^{2}}\nHusk: minus, og f′ kommer først."),
             Lesson(id: "prod.mix", title: "Blandet", skills: [.productRule, .quotientRule, .basicDerivatives],

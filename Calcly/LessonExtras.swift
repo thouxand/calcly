@@ -106,7 +106,7 @@ struct StepsView: View {
                 HStack(alignment: .center, spacing: 10) {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.good).font(.title3)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(step.prompt).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                        MathText(markup: step.prompt, size: 13, weight: .bold, alignment: .leading).foregroundStyle(.secondary)
                         MathText(markup: step.options[step.correct], size: 19, alignment: .leading)
                     }
                     Spacer()
@@ -118,7 +118,7 @@ struct StepsView: View {
             if draft.step < steps.count {
                 let step = steps[draft.step]
                 HStack {
-                    Text(step.prompt).font(.system(.headline, design: .rounded).weight(.heavy))
+                    MathText(markup: step.prompt, size: 18, weight: .heavy, alignment: .leading)
                     Spacer()
                     Text("\(draft.step + 1)/\(steps.count)").font(.subheadline.weight(.bold)).foregroundStyle(color)
                 }

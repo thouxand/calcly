@@ -8,7 +8,7 @@ enum Skill: String, Codable, CaseIterable {
     case integralPowers, basicIntegrals, integralLinear
     case substitutionIdentify, substitution
     case byPartsRule, byParts
-    case chainSteps, substitutionSteps
+    case chainSteps, substitutionSteps, productSteps
     case limitsBasic, limitsAlgebra
     case definiteIntegrals
     case partialDerivatives
@@ -101,6 +101,7 @@ enum Generator {
         case .byPartsRule: return byPartsRule()
         case .byParts: return byParts()
         case .chainSteps: return chainSteps()
+        case .productSteps: return productSteps()
         case .substitutionSteps: return substitutionSteps()
         case .limitsBasic: return limitsBasic()
         case .limitsAlgebra: return limitsAlgebra()
@@ -306,6 +307,41 @@ enum Generator {
                             explanation: explanation, skill: .productRule)
         }
         return ask("Find f′(x)", diff(f), tfLeft: "(\(f))′", correct: d, wrong: wrong, explanation: explanation, skill: .productRule)
+    }
+
+    /// One step: the right option plus up to three different wrong ones, shuffled.
+    private static func makeStep(_ prompt: String, _ correct: String, _ wrong: [String]) -> Exercise.Step {
+        var options = [correct]
+        for w in wrong.shuffled() where !options.contains(w) && options.count < 4 { options.append(w) }
+        options.shuffle()
+        return Exercise.Step(prompt: prompt, options: options, correct: options.firstIndex(of: correct)!)
+    }
+
+    /// Produktreglen i tre trin: f′, g′ og så f′·g + f·g′.
+    private static func productSteps() -> Exercise {
+        let p = polys.randomElement()!, t = transcendental.randomElement()!
+        let f = "\(p.f)·\(t.f)"
+        let fPrime = p.d.isEmpty ? "1" : p.d
+        let gPrime = t.dNeg ? M.minus + t.d : t.d
+        let first = p.d.isEmpty ? t.f : "\(p.d)·\(t.f)"
+        var second: String
+        if t.f == "ln(x)", let n = p.power {
+            second = n == 1 ? "1" : M.x(n - 1)
+        } else {
+            second = "\(p.f)·\(t.d)"
+        }
+        if t.dNeg { second = M.minus + second }
+        let d = M.sum([first, second])
+        let gPrimeOnly = t.dNeg ? M.minus + (p.d.isEmpty ? t.d : "\(p.d)·\(t.d)") : (p.d.isEmpty ? t.d : "\(p.d)·\(t.d)")
+        let otherG = transcendental.filter { $0.f != t.f }.map { $0.dNeg ? M.minus + $0.d : $0.d }
+        let steps = [
+            makeStep("Trin 1: f = \(p.f). Hvad er f′?", fPrime, [p.f, "0", "x", "2", "3x", "x^{2}", "2x^{2}"]),
+            makeStep("Trin 2: g = \(t.f). Hvad er g′?", gPrime, [t.f, M.negate(gPrime)] + otherG),
+            makeStep("Trin 3: f′·g + f·g′ = ?", d, [gPrimeOnly, first, second, M.sum([first, M.negate(second)])]),
+        ]
+        return Exercise(prompt: "Trin for trin", question: diff(f), kind: .steps(steps),
+                        explanation: "Produktreglen: (f·g)′ = f′·g + f·g′\nf = \(p.f), f′ = \(fPrime)\ng = \(t.f), g′ = \(gPrime)\nf′(x) = \(d)",
+                        skill: .productSteps)
     }
 
     private static let quotients: [(String, String, [String])] = [

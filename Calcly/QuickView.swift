@@ -8,7 +8,7 @@ struct QuickView: View {
         case all = "Alt", diff = "Differentiation", integral = "Integration"
         var id: String { rawValue }
         var skills: [Skill] {
-            let all = Skill.allCases.filter { ![.chainIdentify, .substitutionIdentify, .chainSteps, .substitutionSteps].contains($0) }
+            let all = Skill.allCases.filter { ![.chainIdentify, .substitutionIdentify, .chainSteps, .substitutionSteps, .productSteps].contains($0) }
             switch self {
             case .all: return all
             case .diff: return all.filter { !$0.isIntegration && $0 != .limitsBasic && $0 != .limitsAlgebra }
